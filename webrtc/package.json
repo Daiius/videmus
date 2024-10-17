@@ -1,0 +1,20 @@
+{
+  "name": "videmus-webrtc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mediasoup": "^3.14.15",
+    "mediasoup-client": "^3.7.17",
+    "node-ip": "^0.1.2",
+    "sdp-transform": "^2.14.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.5",
+    "@types/sdp-transform": "^2.4.9",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

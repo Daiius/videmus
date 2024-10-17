@@ -1,0 +1,38 @@
+services:
+  videmus-nextjs:
+    build:
+      dockerfile: ./next/Dockerfile.nextjs
+    container_name: videmus-nextjs-dev
+    environment:
+      TZ: 'Asia/Tokyo'
+    env_file:
+      - .env.next
+    volumes:
+      - ./next:/app
+    tmpfs:
+      - /app/.next
+
+  videmus-webrtc:
+    build:
+      dockerfile: ./webrtc/Dockerfile.webrtc
+    container_name: videmus-webrtc
+    working_dir: /app
+    env_file:
+      - .env.webrtc
+    ports:
+      - "50000-50100:50000-50100/udp"
+    volumes:
+      - ./webrtc:/app
+
+  webserver:
+    image: nginx
+    container_name: videmus-webserver
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+
+networks:
+  default:
+    name: videmus-network 
+
