@@ -348,7 +348,10 @@ app.post('/mediasoup/client-connect/:resourcesId/:transportId', async (req, res)
   const streamerTransport = streamerResource.streamerTransport;
   
   const dtlsParameters = req.body;
-  streamerTransport.connect({ dtlsParameters });
+  await streamerTransport.connect({ dtlsParameters });
+  streamerTransport.on('icestatechange', (iceState) =>
+    console.log('streamer transport ice change: ', iceState)
+  );
   res.status(200).send('client connect callback handled');
 });
 
@@ -373,6 +376,8 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
       return;
   }
 
+  console.log('consumer-parameters: ',resourcesId, transportId); 
+
   const broadcasterResources =
     resourcesDict[resourcesId].broadcasterResources;
   const router = resourcesDict[resourcesId].router;
@@ -396,6 +401,7 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
           rtpCapabilities: clientCapabilities,
           paused: true,
         });
+      console.log('consumer created: ', consumer.id, consumer.kind);
       streamerResource.consumers.push(consumer);
       consumerParameters.push({
         id: consumer.id,
@@ -405,7 +411,8 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
       });
     } else {
       console.warn(
-        `resourcesId ${resourcesId} cannot consume producer ${producer.id}`);
+        `resourcesId ${resourcesId} cannot consume producer ${producer.id}`
+      );
     }
   }
 
