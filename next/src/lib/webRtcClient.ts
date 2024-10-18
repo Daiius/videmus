@@ -25,6 +25,7 @@ export const createWebRtcStreams = async (
   const transportParameters = await transportParametersResponse.json();
   console.log('transportParmaeters: %o', transportParameters);
   const transport = device.createRecvTransport(transportParameters);
+  console.log('is server transport id and recvtransport id is the same?: ', transportParameters.id === transport.id);
   transport.on(
     'connect', 
     async ({ dtlsParameters }, callback, errback) => {
@@ -64,9 +65,10 @@ export const createWebRtcStreams = async (
     rtpParameters: RtpParameters;
   }[] = await consumerParametersResponse.json();
 
-  return await Promise.all(
-    consumerParameters.map(async parameter =>
-      await transport.consume(parameter)
-    )
-  );
+  const consumers: Consumer[] = [];
+  for (const consumerParameter of consumerParameters) {
+    consumers.push(await transport.consume(consumerParameter));
+  }
+  return consumers;
 }
+
