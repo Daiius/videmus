@@ -16,20 +16,16 @@ export const createWebRtcStreams = async (
     `${baseUrl}/mediasoup/router-rtp-capabilities/${streamId}`
   );
   const routerRtpCapabilities = await routerRtpCapabilitiesResponse.json();
-  console.log('routerRtpCapabilities: %o', routerRtpCapabilities);
   const device = new Device();
   await device.load({ routerRtpCapabilities });
   const transportParametersResponse = await fetch(
     `${baseUrl}/mediasoup/streamer-transport-parameters/${streamId}`
   );
   const transportParameters = await transportParametersResponse.json();
-  console.log('transportParmaeters: %o', transportParameters);
   const transport = device.createRecvTransport(transportParameters);
-  console.log('is server transport id and recvtransport id is the same?: ', transportParameters.id === transport.id);
   transport.on(
     'connect', 
     async ({ dtlsParameters }, callback, errback) => {
-      console.log('transport connect');
       try {
         await fetch(
           `${baseUrl}/mediasoup/client-connect/${streamId}/${transportParameters.id}`, {
@@ -47,9 +43,6 @@ export const createWebRtcStreams = async (
       }
     }
   );
-  transport.on('connectionstatechange', (newConnectionState) => {
-    console.log('connection stage: ', newConnectionState);
-  });
 
   const consumerParametersResponse = await fetch(
     `${baseUrl}/mediasoup/consumer-parameters/${streamId}/${transportParameters.id}`, {
