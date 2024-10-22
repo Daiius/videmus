@@ -19,6 +19,9 @@ services:
     working_dir: /app
     env_file:
       - .env.webrtc
+    environment:
+      DEBUG: "mediasoup*"
+      TZ: 'Asia/Tokyo'
     ports:
       - "50000-50100:50000-50100/udp"
     volumes:
@@ -29,6 +32,8 @@ services:
     container_name: videmus-webserver
     ports:
       - 80:80
+    environment:
+      TZ: 'Asia/Tokyo'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
 
