@@ -106,20 +106,20 @@ app.get('/id/:id', async (req, res) => {
  *
  */
 app.post('/whip/:id', async (req, res) => {
-  const resourcesId = req.params.id;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
-  }
-
-  console.log(`/whip/${resourcesId} post access`);
-
-  const resources = resourcesDict[resourcesId];
-  const router = resources.router;
-  const broadcasterResources = resources.broadcasterResources;
-
   try {
+    const resourcesId = req.params.id;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+
+    console.log(`/whip/${resourcesId} post access`);
+
+    const resources = resourcesDict[resourcesId];
+    const router = resources.router;
+    const broadcasterResources = resources.broadcasterResources;
+
     const localSdpObject = sdpTransform.parse(req.body.toString());
     const rtpCapabilities = sdpCommonUtils.extractRtpCapabilities({
       sdpObject: localSdpObject
@@ -245,158 +245,174 @@ app.post('/whip/:id', async (req, res) => {
       .send(answer.toString());
   } catch (error) {
     console.error('Error during WebRTC offer handling: ', error);
-    res.status(500);
+    res.status(500).send(`Error during WebRTC offer handling: ${error}`);
   }
 });
 
 app.delete('/whip/test-broadcast/:id', async (req, res) => {
-  const resourcesId = req.params.id;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
+  try {
+    const resourcesId = req.params.id;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+
+    const broadcasterResources = 
+      resourcesDict[resourcesId].broadcasterResources;
+    const broadcasterTransport = 
+      broadcasterResources.broadcasterTransport;
+    const streamerResources =
+      resourcesDict[resourcesId].streamerResources;
+
+    console.log(
+      'broadcasterTransport stats: %o', 
+      await broadcasterTransport?.getStats()
+    );
+
+    for (const producer of broadcasterResources.producers) {
+      console.log('producer stats: %o', await producer.getStats());
+    }
+    // routerを消してしまうと再接続が難しい、
+    // 一旦キープしてtransportだけ再生成してみる？
+
+    //resourcesDict[resourcesId].router.close();
+
+    broadcasterTransport?.close();
+    broadcasterResources.producers = [];
+   
+    streamerResources.forEach(resources => resources.streamerTransport.close());
+    resourcesDict[resourcesId].streamerResources = [];
+
+
+    // TODO : closeしたstreamerTransportを削除する処理
+    // TODO : 一定時間再接続が無かった場合にリソース開放を行う処理
+
+    res.status(200)
+      .send(`router ${resourcesId} closed.`);
+    console.log(`transport: ${broadcasterTransport?.id} closed.`);
+  } catch (err) {
+    console.error(`Error at ending broadcasting: ${err}`);
+    res.status(500).send(`Error at ending broadcasting: ${err}`);  
   }
-
-  const broadcasterResources = 
-    resourcesDict[resourcesId].broadcasterResources;
-  const broadcasterTransport = 
-    broadcasterResources.broadcasterTransport;
-  const streamerResources =
-    resourcesDict[resourcesId].streamerResources;
-
-  console.log(
-    'broadcasterTransport stats: %o', 
-    await broadcasterTransport?.getStats()
-  );
-
-  for (const producer of broadcasterResources.producers) {
-    console.log('producer stats: %o', await producer.getStats());
-  }
-  // routerを消してしまうと再接続が難しい、
-  // 一旦キープしてtransportだけ再生成してみる？
-
-  //resourcesDict[resourcesId].router.close();
-
-  broadcasterTransport?.close();
-  broadcasterResources.producers = [];
- 
-  streamerResources.forEach(resources => resources.streamerTransport.close());
-  resourcesDict[resourcesId].streamerResources = [];
-
-
-  // TODO : closeしたstreamerTransportを削除する処理
-  // TODO : 一定時間再接続が無かった場合にリソース開放を行う処理
-
-  res.status(200)
-    .send(`router ${resourcesId} closed.`);
-  console.log(`transport: ${broadcasterTransport?.id} closed.`);
 });
 
 app.get('/mediasoup/router-rtp-capabilities/:id', async (req, res) => {
-  const resourcesId = req.params.id;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
+  try {
+    const resourcesId = req.params.id;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+    const router = resourcesDict[resourcesId].router;
+    res.status(200).send(router.rtpCapabilities);
+  } catch (err) {
+    console.error(`Error at GET router-rtp-capabilities: ${err}`);
+    res.status(500).send(`Error at GET router-rtp-capabilities: ${err}`);  
   }
-  const router = resourcesDict[resourcesId].router;
-  res.status(200).send(router.rtpCapabilities);
 });
 
 app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
-  const resourcesId = req.params.id;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
+  try {
+    const resourcesId = req.params.id;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+
+    const router = resourcesDict[resourcesId].router;
+    const streamerResources = 
+      resourcesDict[resourcesId].streamerResources;
+
+    // TODO : streamerの人数制限はここで行う
+    const streamerTransport = await createWebRtcTransport(router);
+    streamerResources.push({
+      streamerTransport,
+      consumers: [],
+    });
+
+    res.status(200).send({
+      id: streamerTransport.id,
+      dtlsParameters: streamerTransport.dtlsParameters,
+      iceParameters: streamerTransport.iceParameters,
+      iceCandidates: streamerTransport.iceCandidates,
+    });
+  } catch (err) {
+    console.error(`Error at GET streamer-transport-parameters: ${err}`);
+    res.status(500).send(`Error at GET streamer-transport-parameters: ${err}`);  
   }
-
-  const router = resourcesDict[resourcesId].router;
-  const streamerResources = 
-    resourcesDict[resourcesId].streamerResources;
-
-  // TODO : streamerの人数制限はここで行う
-  const streamerTransport = await createWebRtcTransport(router);
-  streamerResources.push({
-    streamerTransport,
-    consumers: [],
-  });
-
-  res.status(200).send({
-    id: streamerTransport.id,
-    dtlsParameters: streamerTransport.dtlsParameters,
-    iceParameters: streamerTransport.iceParameters,
-    iceCandidates: streamerTransport.iceCandidates,
-  });
 });
 
 app.post('/mediasoup/client-connect/:resourcesId/:transportId', async (req, res) => {
-  const resourcesId = req.params.resourcesId;
-  const transportId = req.params.transportId;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
-  }
-
-  const streamerResource = 
-    resourcesDict[resourcesId]
-    .streamerResources
-    .find(resource => resource.streamerTransport.id === transportId);
-  if (streamerResource == null) {
-    res.status(404)
-      .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
-      return;
-  }
-
-  const streamerTransport = streamerResource.streamerTransport;
-  const dtlsParameters = req.body;
   try {
-    // 動くバージョンではなぜかawaitが無い...
-    streamerTransport.connect({ dtlsParameters });
+    const resourcesId = req.params.resourcesId;
+    const transportId = req.params.transportId;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+
+    const streamerResource = 
+      resourcesDict[resourcesId]
+      .streamerResources
+      .find(resource => resource.streamerTransport.id === transportId);
+    if (streamerResource == null) {
+      res.status(404)
+        .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+        return;
+    }
+
+    const streamerTransport = streamerResource.streamerTransport;
+    const dtlsParameters = req.body;
+
+    await streamerTransport.connect({ dtlsParameters });
     streamerTransport.on('icestatechange', (iceState) =>
       console.log('streamer transport ice change: ', iceState)
     );
     res.status(200).send('client connect callback handled');
   } catch (err) {
-    res.status(500).send(`error: ${err}`);
+    console.error(`Error at POST client-connect: ${err}`);
+    res.status(500).send(`Error at POST client-connect: ${err}`);  
   }
 });
 
 app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req, res) => {
-  const clientCapabilities = req.body;
-  
-  const resourcesId = req.params.resourcesId;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
-  }
-
-  const transportId = req.params.transportId;
-  const streamerResource = 
-    resourcesDict[resourcesId]
-    .streamerResources
-    .find(resource => resource.streamerTransport.id === transportId);
-  if (streamerResource == null) {
-    res.status(404)
-      .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
-      return;
-  }
-
-  console.log('consumer-parameters: ',resourcesId, transportId); 
-
-  const broadcasterResources =
-    resourcesDict[resourcesId].broadcasterResources;
-  const router = resourcesDict[resourcesId].router;
-
-  type ConsumerParameters =  {
-    id: string;
-    producerId: string;
-    kind: MediaKind;
-    rtpParameters: RtpParameters;
-  };
   try {
+    const clientCapabilities = req.body;
+    
+    const resourcesId = req.params.resourcesId;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
+      return;
+    }
+
+    const transportId = req.params.transportId;
+    const streamerResource = 
+      resourcesDict[resourcesId]
+      .streamerResources
+      .find(resource => resource.streamerTransport.id === transportId);
+    if (streamerResource == null) {
+      res.status(404)
+        .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+        return;
+    }
+
+    console.log('consumer-parameters: ',resourcesId, transportId); 
+
+    const broadcasterResources =
+      resourcesDict[resourcesId].broadcasterResources;
+    const router = resourcesDict[resourcesId].router;
+
+    type ConsumerParameters =  {
+      id: string;
+      producerId: string;
+      kind: MediaKind;
+      rtpParameters: RtpParameters;
+    };
     const consumerParameters: ConsumerParameters[] = [];
     for (const producer of broadcasterResources.producers) {
       const canConsume = router.canConsume({
@@ -426,33 +442,38 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
     }
 
     res.status(200).send(consumerParameters);
-  } catch (error) {
-    res.status(500).send(`error: ${error}`);
+  } catch (err) {
+    console.error(`Error at POST consumer-parameters: ${err}`);
+    res.status(500).send(`Error at POST consumer-parameters: ${err}`);  
   }
 });
 
 app.post('/mediasoup/resume-consumer/:resourcesId/:transportId', async (req, res) => {
-  const resourcesId = req.params.resourcesId;
-  if (!(resourcesId in resourcesDict)) {
-    res.status(404)
-      .send(`resoures with id ${resourcesId} doesn't exist`);
-    return;
-  }
-
-  const transportId = req.params.transportId;
-  const streamerResource = 
-    resourcesDict[resourcesId]
-    .streamerResources
-    .find(resource => resource.streamerTransport.id === transportId);
-  if (streamerResource == null) {
-    res.status(404)
-      .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+  try {
+    const resourcesId = req.params.resourcesId;
+    if (!(resourcesId in resourcesDict)) {
+      res.status(404)
+        .send(`resoures with id ${resourcesId} doesn't exist`);
       return;
+    }
+
+    const transportId = req.params.transportId;
+    const streamerResource = 
+      resourcesDict[resourcesId]
+      .streamerResources
+      .find(resource => resource.streamerTransport.id === transportId);
+    if (streamerResource == null) {
+      res.status(404)
+        .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+        return;
+    }
+
+    streamerResource.consumers.forEach(async c => await c.resume());
+    res.status(200).send();
+  } catch (err) {
+    console.error(`Error at POST resume-consumer: ${err}`);
+    res.status(500).send(`Error at POST resume-consumer: ${err}`);  
   }
-
-  streamerResource.consumers.forEach(async c => await c.resume());
-
-  res.status(200).send();
 });
 
 const httpServer = createServer(app);
