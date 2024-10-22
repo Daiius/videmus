@@ -4,33 +4,45 @@ import React from 'react';
 import clsx from 'clsx';
 import { useWebRtcStreams } from '@/hooks/useWebRtcStream';
 
+import { createWebRtcStreams } from '@/lib/webRtcClient';
+
 const WebRtcVideo: React.FC<{
   streamId: string;
 }> = ({
   streamId,
 }) => {
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const { consumers } = useWebRtcStreams({ streamId });
+  const [mounted, setMounted] = React.useState<boolean>(false);
+  //const { consumers } = useWebRtcStreams({ streamId });
   React.useEffect(() => {
-    (async () => {
-      if (videoRef.current && consumers.length > 0) {
-        try {
-        const stream = new MediaStream();
-        consumers.forEach(c => stream.addTrack(c.track));
-        videoRef.current.srcObject = stream;
-        await videoRef.current?.play();
-        } catch (err) {
-          console.error('error while playing video: ', err);
+    if (!mounted) {
+      setMounted(true);
+      (async () => {
+        if (videoRef.current) {
+          try {
+            const consumers = await createWebRtcStreams(streamId);
+            console.log('consumers: %o', consumers);
+            const stream = new MediaStream();
+            consumers.forEach(c => {
+              console.log('consumer track: ', c.track);
+              stream.addTrack(c.track);
+            });
+            videoRef.current.srcObject = stream;
+            await videoRef.current?.play();
+            console.log('video.play() called!');
+          } catch (err) {
+            console.error('error while playing video: ', err);
+          }
         }
-      }
-    })();
-  }, [consumers]);
+      })();
+    }
+  }, []);
 
   return (
     <video
       ref={videoRef} 
       className={clsx('w-full')}
-      controls autoPlay muted playsInline
+      autoPlay controls muted playsInline
     >
     </video>
   );

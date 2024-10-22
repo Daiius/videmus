@@ -73,6 +73,7 @@ app.post('/id', async (_req, res) => {
       res.status(503).send('All channels are occupied');
       return;
     }
+    console.log(`id: ${availableId} created`);
 
     resourcesDict[availableId] = {
       router: await worker.createRouter({ mediaCodecs }),
@@ -112,11 +113,14 @@ app.post('/whip/:id', async (req, res) => {
     return;
   }
 
-  const router = resourcesDict[resourcesId].router;
+  console.log(`/whip/${resourcesId} post access`);
+
+  const resources = resourcesDict[resourcesId];
+  const router = resources.router;
+  const broadcasterResources = resources.broadcasterResources;
 
   try {
     const localSdpObject = sdpTransform.parse(req.body.toString());
-    console.log('body: ', req.body.toString());
     const rtpCapabilities = sdpCommonUtils.extractRtpCapabilities({
       sdpObject: localSdpObject
     });
@@ -157,9 +161,7 @@ app.post('/whip/:id', async (req, res) => {
     // 既存のtransportが存在していたとしても再利用せず、 
     // 毎回作り直してみる
     const broadcasterTransport = await createWebRtcTransport(router);
-    resourcesDict[resourcesId]
-      .broadcasterResources
-      .broadcasterTransport = broadcasterTransport;
+    broadcasterResources.broadcasterTransport = broadcasterTransport;
 
     broadcasterTransport.observer.on(
       'icestatechange', 
@@ -276,8 +278,10 @@ app.delete('/whip/test-broadcast/:id', async (req, res) => {
   //resourcesDict[resourcesId].router.close();
 
   broadcasterTransport?.close();
+  broadcasterResources.producers = [];
  
   streamerResources.forEach(resources => resources.streamerTransport.close());
+  resourcesDict[resourcesId].streamerResources = [];
 
 
   // TODO : closeしたstreamerTransportを削除する処理
@@ -346,10 +350,17 @@ app.post('/mediasoup/client-connect/:resourcesId/:transportId', async (req, res)
   }
 
   const streamerTransport = streamerResource.streamerTransport;
-  
   const dtlsParameters = req.body;
-  streamerTransport.connect({ dtlsParameters });
-  res.status(200).send('client connect callback handled');
+  try {
+    // 動くバージョンではなぜかawaitが無い...
+    streamerTransport.connect({ dtlsParameters });
+    streamerTransport.on('icestatechange', (iceState) =>
+      console.log('streamer transport ice change: ', iceState)
+    );
+    res.status(200).send('client connect callback handled');
+  } catch (err) {
+    res.status(500).send(`error: ${err}`);
+  }
 });
 
 app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req, res) => {
@@ -373,6 +384,8 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
       return;
   }
 
+  console.log('consumer-parameters: ',resourcesId, transportId); 
+
   const broadcasterResources =
     resourcesDict[resourcesId].broadcasterResources;
   const router = resourcesDict[resourcesId].router;
@@ -383,33 +396,63 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
     kind: MediaKind;
     rtpParameters: RtpParameters;
   };
-  const consumerParameters: ConsumerParameters[] = [];
-  for (const producer of broadcasterResources.producers) {
-    const canConsume = router.canConsume({
-      producerId: producer.id,
-      rtpCapabilities: clientCapabilities,
-    });
-    if (canConsume) {
-      const consumer = await streamerResource
-        .streamerTransport.consume({
-          producerId: producer.id,
-          rtpCapabilities: clientCapabilities,
-          paused: true,
-        });
-      streamerResource.consumers.push(consumer);
-      consumerParameters.push({
-        id: consumer.id,
-        producerId: consumer.producerId,
-        kind: consumer.kind,
-        rtpParameters: consumer.rtpParameters,
+  try {
+    const consumerParameters: ConsumerParameters[] = [];
+    for (const producer of broadcasterResources.producers) {
+      const canConsume = router.canConsume({
+        producerId: producer.id,
+        rtpCapabilities: clientCapabilities,
       });
-    } else {
-      console.warn(
-        `resourcesId ${resourcesId} cannot consume producer ${producer.id}`);
+      if (canConsume) {
+        const consumer = await streamerResource
+          .streamerTransport.consume({
+            producerId: producer.id,
+            rtpCapabilities: clientCapabilities,
+            paused: true,
+          });
+        console.log('consumer created: ', consumer.id, consumer.kind);
+        streamerResource.consumers.push(consumer);
+        consumerParameters.push({
+          id: consumer.id,
+          producerId: consumer.producerId,
+          kind: consumer.kind,
+          rtpParameters: consumer.rtpParameters,
+        });
+      } else {
+        console.warn(
+          `resourcesId ${resourcesId} cannot consume producer ${producer.id}`
+        );
+      }
     }
+
+    res.status(200).send(consumerParameters);
+  } catch (error) {
+    res.status(500).send(`error: ${error}`);
+  }
+});
+
+app.post('/mediasoup/resume-consumer/:resourcesId/:transportId', async (req, res) => {
+  const resourcesId = req.params.resourcesId;
+  if (!(resourcesId in resourcesDict)) {
+    res.status(404)
+      .send(`resoures with id ${resourcesId} doesn't exist`);
+    return;
   }
 
-  res.status(200).send(consumerParameters);
+  const transportId = req.params.transportId;
+  const streamerResource = 
+    resourcesDict[resourcesId]
+    .streamerResources
+    .find(resource => resource.streamerTransport.id === transportId);
+  if (streamerResource == null) {
+    res.status(404)
+      .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+      return;
+  }
+
+  streamerResource.consumers.forEach(async c => await c.resume());
+
+  res.status(200).send();
 });
 
 const httpServer = createServer(app);

@@ -2,14 +2,17 @@
 import WebRtcVideo from '@/components/WebRtcVideo';
 
 const StreamPage: React.FC<{
-  params: {
+  params: Promise<{
     streamId: string
-  }
-}> = ({ params }) => {
+  }>
+}> = async ({ params }) => {
+
+  const { streamId } = await params;
+
   return (
     <div>
       <div>ストリーミング用ページ</div>
-      <WebRtcVideo streamId={params.streamId} />
+      <WebRtcVideo streamId={streamId} />
     </div>
   );
 };
