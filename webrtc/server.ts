@@ -431,6 +431,30 @@ app.post('/mediasoup/consumer-parameters/:resourcesId/:transportId', async (req,
   }
 });
 
+app.post('/mediasoup/resume-consumer/:resourcesId/:transportId', async (req, res) => {
+  const resourcesId = req.params.resourcesId;
+  if (!(resourcesId in resourcesDict)) {
+    res.status(404)
+      .send(`resoures with id ${resourcesId} doesn't exist`);
+    return;
+  }
+
+  const transportId = req.params.transportId;
+  const streamerResource = 
+    resourcesDict[resourcesId]
+    .streamerResources
+    .find(resource => resource.streamerTransport.id === transportId);
+  if (streamerResource == null) {
+    res.status(404)
+      .send(`transportId ${transportId} is not found in resourcesId ${resourcesId}`);
+      return;
+  }
+
+  streamerResource.consumers.forEach(async c => await c.resume());
+
+  res.status(200).send();
+});
+
 const httpServer = createServer(app);
 let connections: Socket[] = [];
 httpServer.listen(3000, () => {

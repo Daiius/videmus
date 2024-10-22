@@ -62,6 +62,15 @@ export const createWebRtcStreams = async (
   for (const consumerParameter of consumerParameters) {
     consumers.push(await transport.consume(consumerParameter));
   }
+  //consumers.forEach(c => c.resume());
+  const resumeConsumerResponse = await fetch(
+    `${baseUrl}/mediasoup/resume-consumer/${streamId}/${transportParameters.id}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!resumeConsumerResponse.ok) {
+    throw new Error('server consumer resume request failed.');
+  }
   return consumers;
 }
 
