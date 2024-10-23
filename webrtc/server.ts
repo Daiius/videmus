@@ -6,6 +6,7 @@ import {
   Worker,
   RtpParameters,
   MediaKind,
+  IceState,
 } from 'mediasoup/node/lib/types';
 
 import { mediaCodecs } from './codecs';
@@ -328,6 +329,28 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
 
     // TODO : streamerの人数制限はここで行う
     const streamerTransport = await createWebRtcTransport(router);
+
+    streamerTransport.on('icestatechange', (state: IceState) => {
+      console.log(`streamerTransport (${streamerTransport.id}) ice stage changed to ${state}`);
+      if (state === 'disconnected') {
+        const streamerResource =
+          resourcesDict[resourcesId]
+          .streamerResources
+          .find(resource => resource.streamerTransport.id === streamerTransport.id);
+        if (streamerResource != null) {
+          // 切断されたstreamerのリソース開放
+          streamerResource.consumers.forEach(c => c.close());
+          resourcesDict[resourcesId].streamerResources =
+            resourcesDict[resourcesId]
+            .streamerResources
+            .filter(resource => 
+              resource.streamerTransport.id !== streamerTransport.id
+            );
+          console.log(`streamer resources (${streamerTransport.id}) has been released`);
+        }
+      }
+    });
+
     streamerResources.push({
       streamerTransport,
       consumers: [],
