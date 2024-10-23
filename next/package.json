@@ -15,8 +15,8 @@
     "mediasoup": "^3.14.15",
     "mediasoup-client": "^3.7.17",
     "next": "15.0.0-rc.1",
-    "react": "^18",
-    "react-dom": "^18"
+    "react": "19.0.0-rc-45804af1-20241021",
+    "react-dom": "19.0.0-rc-45804af1-20241021"
   },
   "devDependencies": {
     "@types/node": "^20",
