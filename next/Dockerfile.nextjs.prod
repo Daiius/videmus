@@ -1,14 +1,50 @@
-FROM node:20
+# 参考: https://zenn.dev/kazumax4395/articles/427cc791f6145b
 
-WORKDIR /app
+# Build layer
+# devDependenciesも含めてinstallし、
+# .next/ 内にNext.js関連の仕組みが動作するのに必要なファイルを出力
+FROM node:20-slim AS build
 
-COPY . .
+WORKDIR /workspace/next
 
 RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./next/package.json /workspace/next/
+COPY ./database ./workspace/database
 
-RUN pnpm install
+RUN pnpm install --filter next
 
-RUN pnpm build
+COPY ./next ./workspace/next
 
-CMD ["pnpm", "start"]
+RUN pnpm next build
+
+# Package install layer
+# dependencies をインストール、動作に必要なライブラリだけを取得する
+FROM node:20-slim AS node_modules
+WORKDIR /workspace/next
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./next/package.json /workspace/next/
+
+RUN pnpm install --prod --filter next
+
+RUN ls /workspace
+RUN ls /workspace/next
+
+# Deploy layer
+#
+# イメージサイズやセキュリティの視点からおすすめのイメージとのこと
+FROM gcr.io/distroless/nodejs20-debian12
+#FROM gcr.io/distroless/nodejs20:debug
+
+WORKDIR /workspace/next
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY ./next/package.json ./next/next.config.mjs ./
+COPY --from=build /workspace/next/public ./public
+COPY --from=build /workspace/next/.next ./.next
+COPY --from=node_modules /workspace/next/node_modules /workspace/next/node_modules
+
+CMD ["./node_modules/next/dist/bin/next", "start"]
 
