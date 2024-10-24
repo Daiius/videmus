@@ -8,7 +8,9 @@ services:
       TZ: 'Asia/Tokyo'
     env_file:
       - .env.next
+      - .env.database
     volumes:
+      - ./database:/workspace/database
       - ./node_modules:/workspace/node_modules
       - ./next:/workspace/app
     tmpfs:
