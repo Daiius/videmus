@@ -18,6 +18,7 @@ export type StreamerResources = {
 export type Resources = {
   router: Router;
   broadcasterResources: BroadcasterResources;
+  streamId: string;
   streamerResources: StreamerResources[];
 }
 
