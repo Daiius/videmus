@@ -1,6 +1,6 @@
 FROM node:20
 
-WORKDIR /app
+WORKDIR /workspace/app
 
 RUN npm install -g pnpm
 
