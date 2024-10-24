@@ -5,6 +5,8 @@ import { broadcastIds } from 'videmus-database/db/schema';
 
 import { notFound } from 'next/navigation';
 
+import StreamIdChecker from '@/components/StreamIdChecker';
+
 const BroadcasterPage: React.FC<{
   params: Promise<{ broadcastId: string }>
 }> = async ({ params }) => {
@@ -37,6 +39,7 @@ const BroadcasterPage: React.FC<{
           OBS配信URL : 
           {`${process.env.HOST_URL}/api/whip/${validIdEntry.id}`}
         </div>
+        <StreamIdChecker broadcastId={broadcastId} />
       </div>
     </div>
   );
