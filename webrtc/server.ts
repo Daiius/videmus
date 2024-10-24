@@ -22,6 +22,12 @@ import ortc from 'mediasoup-client/lib/ortc';
 import sdpCommonUtils from 'mediasoup-client/lib/handlers/sdp/commonUtils';
 import sdpUnifiedPlanUtils from 'mediasoup-client/lib/handlers/sdp/unifiedPlanUtils';
 
+import { db } from 'videmus-database/db';
+import { broadcastIds } from 'videmus-database/db/schema';
+
+const test = await db.select().from(broadcastIds);
+console.log(test);
+
 const app = express();
 app.use(express.json());
 app.use(express.text({
