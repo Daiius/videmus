@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "drizzle-orm": "^0.35.3",
     "express": "^4.21.1",
     "mediasoup": "^3.14.15",
     "mediasoup-client": "^3.7.17",
+    "mysql2": "^3.11.3",
     "sdp-transform": "^2.14.2",
     "videmus-database": "workspace:*"
   },
