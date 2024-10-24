@@ -21,13 +21,20 @@ sequenceDiagram
     participant database as Videmus<br/>データベース
     participant streamer_page as Videmus<br/>視聴画面
     actor streamer as 視聴者
+    actor administrator as 管理者
 
     Note right of broadcaster : 配信準備
-    broadcaster ->> broadcaster_page : 配信画面にアクセス<br/>配信ID取得のためログイン
-    broadcaster_page ->> database : Google OAuth等を元に<br/>配信用IDの取得
-    database -->> broadcaster_page : 配信用IDの返却
-    broadcaster_page -->> broadcaster : 配信ID＆視聴用URLを返す
+
+    broadcaster ->> broadcaster_page : /broadcastにアクセス<br/>ID発行ボタンを押す
+    broadcaster_page ->> database : 新規ID発行
+    broadcaster_page ->> broadcaster_page : /broadcast/{id} にリダイレクト<br/>自分の配信設定画面が出る
+    broadcaster_page -->> broadcaster : IDや使用可能かを表示
     broadcaster ->> obs : OBS起動<br/>配信IDを含むURLを設定
+
+    Note right of broadcaster : 配信ID有効化
+
+    broadcaster ->> administrator : 配信IDを有効化してほしい旨連絡
+    administrator -->> database : 配信IDを有効化
 
     Note right of broadcaster : 配信開始
     
@@ -40,10 +47,14 @@ sequenceDiagram
     obs ->> server : WebRTC通信
     broadcaster_page ->> server : 状態をポーリング
     server -->> broadcaster_page : 配信状況など更新
+    broadcaster_page -->> broadcaster : 視聴用URLを通知
+    
     Note right of broadcaster : 視聴の流れ
+
     broadcaster ->> streamer : 視聴用URLを共有
     streamer ->> streamer_page : 視聴用URLにアクセス
     streamer_page ->> server : WebRTC接続
+    server ->> server : 視聴用URLから配信IDを特定<br/>どのproducerを関連付けるか決定
     server ->> streamer_page : WebRTC通信
     streamer_page ->> streamer : 動画スタート
     Note right of broadcaster : 配信停止
