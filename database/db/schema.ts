@@ -9,8 +9,8 @@ import {
  */
 export const broadcastIds = mysqlTable('BroadcastIds', {
   id: 
-    varchar('id', { length: 32 }).notNull().primaryKey(),
+    varchar('id', { length: 36 }).notNull().primaryKey(),
   isAvailable:
-    boolean('is_avaiable').notNull()
+    boolean('is_available').notNull()
 });
 
