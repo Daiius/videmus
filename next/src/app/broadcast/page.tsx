@@ -1,6 +1,7 @@
 
 import clsx from 'clsx';
 import GetIdButton from '@/components/GetIdButton';
+import GetNewIdButton from '@/components/GetNewIdButton';
 
 /**
  * Broadcast setting page
@@ -19,8 +20,8 @@ import GetIdButton from '@/components/GetIdButton';
  */
 const BroadcastPage: React.FC = () => (
   <div>
-    <div>配信用ページ</div>
-    <GetIdButton />
+    <div>配信ID生成用ページ</div>
+    <GetNewIdButton />
   </div>
 );
 
