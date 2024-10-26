@@ -1,13 +1,38 @@
-FROM node:20
+FROM node:20-slim AS build
 
-WORKDIR /app
+WORKDIR /workspace/webrtc
 
 RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install 
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./webrtc/package.json /workspace/webrtc/
+COPY ./database/package.json /workspace/database/
 
-COPY . .
+RUN pnpm install --filter videmus-webrtc --filter videmus-database 
 
-CMD ["pnpm", "tsx", "server.ts"]
+COPY ./webrtc /workspace/webrtc/
+
+RUN ls .
+
+RUN pnpm pkgroll --src .
+
+
+FROM node:20-slim AS node_modules
+WORKDIR /workspace/webrtc
+
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./webrtc/package.json /workspace/webrtc/
+COPY ./database/package.json /workspace/database/
+
+RUN pnpm install --prod --filter videmus-webrtc --filter videmus-database 
+
+FROM gcr.io/distroless/nodejs20:debug
+
+COPY ./webrtc/package.json ./
+COPY --from=build /workspace/webrtc/dist ./
+COPY --from=node_modules /workspace/node_modules /workspace/node_modules
+
+CMD ["server.js"]
 

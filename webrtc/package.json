@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": "./dist/server.js",
   "dependencies": {
     "drizzle-orm": "^0.35.3",
     "express": "^4.21.1",
@@ -17,6 +18,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.7.5",
     "@types/sdp-transform": "^2.4.9",
+    "pkgroll": "^2.5.1",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
