@@ -10,6 +10,7 @@ const Button: React.FC<
   ...props
 }) => (
   <HeadlessButton
+    type='button'
     className={clsx(
       'border border-slate-500 rounded-md',
       'text-slate-500',

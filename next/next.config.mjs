@@ -3,10 +3,10 @@
 
 const nextConfig = {
   basePath: '/videmus',
-  publicRuntimeConfig: {
-    basePath: '/videmus',
-  },
-  output: 'standalone',
+  //publicRuntimeConfig: {
+  //  basePath: '/videmus',
+  //},
+  //output: 'standalone',
   //outputFileTracingRoot: path.join(path.resolve(), '../'),
 };
 
