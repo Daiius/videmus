@@ -1,0 +1,5 @@
+packages:
+  - next
+  - webrtc
+  - database
+

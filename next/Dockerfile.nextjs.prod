@@ -1,14 +1,62 @@
-FROM node:20
+# 参考: https://zenn.dev/kazumax4395/articles/427cc791f6145b
 
-WORKDIR /app
+# Build layer
+# devDependenciesも含めてinstallし、
+# .next/ 内にNext.js関連の仕組みが動作するのに必要なファイルを出力
+FROM node:20-slim AS build
 
-COPY . .
+WORKDIR /workspace/next
 
 RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./next/package.json /workspace/next/
+COPY ./database /workspace/database
 
-RUN pnpm install
+RUN pnpm install --filter videmus-next --filter videmus-database
 
-RUN pnpm build
+COPY ./next /workspace/next
 
-CMD ["pnpm", "start"]
+# Next.js の standalone output 機能を使用する
+ARG NEXT_PUBLIC_HOST_URL
+ENV NEXT_PUBLIC_HOST_URL=$NEXT_PUBLIC_HOST_URL
+RUN pnpm next build
+
+# Package install layer
+# dependencies をインストール、動作に必要なライブラリだけを取得する
+FROM node:20-slim AS node_modules
+WORKDIR /workspace/next
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+COPY ./next/package.json /workspace/next/
+COPY ./database /workspace/database
+
+RUN pnpm install --prod --filter videmus-next --filter videmus-database
+
+#RUN ls /workspace
+#RUN ls /workspace/next
+
+# Deploy layer
+#
+# イメージサイズやセキュリティの視点からおすすめのイメージとのこと
+# モノレポ構成にしたためnode_modules内のnextバイナリを直接起動しづらい
+# （名前にバージョンが含まれ指定しづらい）
+# そこでNext.jsのstandalone機能を使用してserver.jsを出力させたが、
+# これもnextバイナリとは異なるのでシェルのある環境でないと動かせていない
+# 要対処、nextバイナリだけstandaloneディレクトリにコピーしたら上手くいくかも
+#FROM gcr.io/distroless/nodejs20-debian12
+FROM gcr.io/distroless/nodejs20:debug
+
+WORKDIR /workspace/next
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY ./next/package.json ./next/next.config.mjs ./
+#COPY --from=build /workspace/next/public ./next/public
+COPY --from=build /workspace/next/.next/standalone ./
+COPY --from=build /workspace/next/.next/static ./next/.next/static/
+#COPY --from=build /workspace/next/.next/server ./next/.next/server/
+#COPY --from=node_modules /workspace/node_modules /workspace/node_modules
+
+
+CMD ["./next/server.js"]
 
