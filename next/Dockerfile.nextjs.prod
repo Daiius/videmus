@@ -10,12 +10,15 @@ WORKDIR /workspace/next
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./next/package.json /workspace/next/
-COPY ./database ./workspace/database
+COPY ./database /workspace/database
 
-RUN pnpm install --filter next
+RUN pnpm install --filter videmus-next --filter videmus-database
 
-COPY ./next ./workspace/next
+COPY ./next /workspace/next
 
+# Next.js の standalone output 機能を使用する
+ARG NEXT_PUBLIC_HOST_URL
+ENV NEXT_PUBLIC_HOST_URL=$NEXT_PUBLIC_HOST_URL
 RUN pnpm next build
 
 # Package install layer
@@ -25,26 +28,35 @@ WORKDIR /workspace/next
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./next/package.json /workspace/next/
+COPY ./database /workspace/database
 
-RUN pnpm install --prod --filter next
+RUN pnpm install --prod --filter videmus-next --filter videmus-database
 
-RUN ls /workspace
-RUN ls /workspace/next
+#RUN ls /workspace
+#RUN ls /workspace/next
 
 # Deploy layer
 #
 # イメージサイズやセキュリティの視点からおすすめのイメージとのこと
-FROM gcr.io/distroless/nodejs20-debian12
-#FROM gcr.io/distroless/nodejs20:debug
+# モノレポ構成にしたためnode_modules内のnextバイナリを直接起動しづらい
+# （名前にバージョンが含まれ指定しづらい）
+# そこでNext.jsのstandalone機能を使用してserver.jsを出力させたが、
+# これもnextバイナリとは異なるのでシェルのある環境でないと動かせていない
+# 要対処、nextバイナリだけstandaloneディレクトリにコピーしたら上手くいくかも
+#FROM gcr.io/distroless/nodejs20-debian12
+FROM gcr.io/distroless/nodejs20:debug
 
 WORKDIR /workspace/next
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY ./next/package.json ./next/next.config.mjs ./
-COPY --from=build /workspace/next/public ./public
-COPY --from=build /workspace/next/.next ./.next
-COPY --from=node_modules /workspace/next/node_modules /workspace/next/node_modules
+#COPY --from=build /workspace/next/public ./next/public
+COPY --from=build /workspace/next/.next/standalone ./
+COPY --from=build /workspace/next/.next/static ./next/.next/static/
+#COPY --from=build /workspace/next/.next/server ./next/.next/server/
+#COPY --from=node_modules /workspace/node_modules /workspace/node_modules
 
-CMD ["./node_modules/next/dist/bin/next", "start"]
+
+CMD ["./next/server.js"]
 
