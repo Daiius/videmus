@@ -11,7 +11,6 @@ const StreamPage: React.FC<{
 
   return (
     <div>
-      <div>ストリーミング用ページ</div>
       <WebRtcVideo streamId={streamId} />
     </div>
   );
