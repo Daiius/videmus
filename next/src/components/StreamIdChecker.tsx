@@ -1,6 +1,9 @@
 'use client'
 
+import clsx from 'clsx';
 import useSWR from 'swr';
+
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 
 const fetcher = async (url: string ) => {
@@ -31,8 +34,13 @@ const StreamIdChecker: React.FC<{
   return (
     <div>
       {data == null
-        ? <div>配信開始後に視聴用URLを表示します...</div>
-        : <div>視聴用URL : {data.streamId}</div>
+        ? <div className='flex flex-row  gap-1 items-center'>
+            <div>配信を開始すると、視聴用URLを表示します...</div>
+            <ArrowPathIcon className={clsx(
+              'size-4 animate-spin'
+            )}/>
+          </div>
+        : <div>視聴用URL: {`${process.env.NEXT_PUBLIC_HOST_URL}/stream/${data.streamId}`}</div>
       }
       {error &&
         <div>エラー： {error.toString()}</div>
