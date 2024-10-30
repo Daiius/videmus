@@ -19,8 +19,8 @@ export default function RootLayout({
     <html lang='jp'>
       <body
         className={clsx(
-          'bg-slate-500 antialiased min-h-screen',
-          'text-white',
+          'bg-background antialiased w-full min-h-screen',
+          'text-foreground',
         )}
       >
         <Header />
