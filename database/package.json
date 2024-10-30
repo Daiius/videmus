@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "drizzle-orm": "0.35.3",
-    "mysql2": "3.11.0"
+    "mysql2": "3.11.3"
   }
 }
