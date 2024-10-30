@@ -1,8 +1,14 @@
+import clsx from 'clsx';
 
 import { notFound } from 'next/navigation';
-import { getBroadcastIdStatus } from '@/lib/broadcastIds';
 
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { XCircleIcon } from '@heroicons/react/24/outline';
+
+import { getBroadcastIdStatus } from '@/lib/broadcastIds';
 import StreamIdChecker from '@/components/StreamIdChecker';
+
+import Panel from '@/components/Panel';
 
 const BroadcasterPage: React.FC<{
   params: Promise<{ broadcastId: string }>
@@ -18,19 +24,40 @@ const BroadcasterPage: React.FC<{
   const { isAvailable } = broadcastIdStatus;
 
   return (
-    <div>
-      <div>あなたの配信用ページ</div>
-      <div>あなたの配信用ID : {broadcastId}</div>
-      <div>
-        配信用IDの有効/無効 : 
-        {isAvailable ? '有効' : '無効'}
-      </div>
+    <div className={clsx(
+      'flex flex-col gap-2',
+      'lg:px-52 md:px-12',
+    )}>
+      <Panel title='ID'>
+        <div className='flex flex-row gap-1 items-center'>
+          <div>{broadcastId}</div>
+          {isAvailable
+            ? <CheckCircleIcon className='size-4 text-green-400' /> 
+            : <XCircleIcon className='size-4 text-red-400' />
+          }
+          {isAvailable
+            ? <div>有効</div>
+            : <div>無効</div>
+          }
+        </div>
+        {!isAvailable &&
+          <div className={clsx(
+            'ml-4',
+            'p-2',
+            'border border-red-400 rounded-md',
+          )}>
+            <div>管理者にID（左から5-6文字程度でも可）を伝えて下さい</div>
+            <div>手動で有効化するので、お待ち下さい....</div>
+          </div>
+        }
+      </Panel>
 
       <div>
-        <div>
-          OBS配信URL : 
+        <Panel
+          title='OBS配信用URL'
+        >
           {`${process.env.HOST_URL}/api/whip/${broadcastId}`}
-        </div>
+        </Panel>
         <StreamIdChecker broadcastId={broadcastId} />
       </div>
     </div>
