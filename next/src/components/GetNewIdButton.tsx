@@ -27,7 +27,7 @@ const GetNewIdButton: React.FC<
       }}
       {...props}
     >
-      新しい配信IDを生成
+      新規配信IDを生成
     </Button>
   )
 };
