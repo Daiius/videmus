@@ -12,9 +12,10 @@ const Button: React.FC<
   <HeadlessButton
     type='button'
     className={clsx(
-      'border border-slate-500 rounded-md',
-      'text-slate-500',
-      'hover:bg-slate-500/10',
+      'bg-primary rounded-md',
+      'hover:bg-primary-hover',
+      'focus:outline focus:outline-primary-highlight',
+      'active:outline active:outline-primary-highlight',
       'p-2',
       className
     )}

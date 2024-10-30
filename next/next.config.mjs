@@ -12,6 +12,7 @@ const nextConfig = {
   //  ...config,
   //  optimization: { minimize: false },
   //}),
+  serverExternalPackages: ['mysql2'],
 };
 
 export default nextConfig;
