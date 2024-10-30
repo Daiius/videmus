@@ -18,7 +18,7 @@ const Panel: React.FC<
   >
     {title &&
       <div className={clsx(
-        'text-sm font-bold mb-2 -mt-2 -ml-1',
+        'text-lg font-bold mb-2 -mt-2 -ml-1',
       )}>
         {title}
       </div>
