@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.1.5",
     "clsx": "^2.1.1",
     "drizzle-orm": "0.35.3",
+    "drizzle-zod": "^0.5.1",
     "mediasoup": "^3.14.15",
     "mediasoup-client": "^3.7.17",
     "mysql2": "3.11.3",
@@ -22,7 +23,8 @@
     "react-dom": "^18.3.1",
     "swr": "^2.2.5",
     "uuid": "^10.0.0",
-    "videmus-database": "workspace:*"
+    "videmus-database": "workspace:*",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20",
