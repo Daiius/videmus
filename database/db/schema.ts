@@ -3,6 +3,7 @@ import {
   varchar,
   boolean,
   primaryKey,
+  timestamp,
 } from 'drizzle-orm/mysql-core';
 
 /**
@@ -38,7 +39,7 @@ export const channels = mysqlTable('Channels', {
     varchar('id', { length: 21 })
       .notNull(),
   broadcastId:
-    varchar('broadcastId', { length: 36 })
+    varchar('broadcast_id', { length: 36 })
       .notNull(),
   name:
     varchar('name', { length: 256 })
@@ -48,6 +49,10 @@ export const channels = mysqlTable('Channels', {
     varchar('description', { length: 1024 })
       .notNull()
       .default(''),
+  createdTime:
+    timestamp('created_time', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
 }, (table) => ({
   primaryKey:
     primaryKey({
