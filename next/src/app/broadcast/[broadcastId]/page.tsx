@@ -2,13 +2,14 @@ import clsx from 'clsx';
 
 import { notFound } from 'next/navigation';
 
-import { getBroadcastIdStatus } from '@/lib/broadcastIds';
+import { getBroadcastInfo } from '@/lib/broadcastIds';
 import StreamIdChecker from '@/components/StreamIdChecker';
 
 import Panel from '@/components/Panel';
 import BroadcastIdPanel from '@/components/BroadcastIdPanel';
 import ObsBroadcastUrlPanel from '@/components/ObsBroadcastUrlPanel';
 import StreamIdPanel from '@/components/StreamIdPanel';
+import ChannelsPanel from '@/components/ChannelsPanel';
 
 /**
  * IDを発行した配信者用のページ
@@ -27,13 +28,13 @@ const BroadcasterPage: React.FC<{
 }> = async ({ params }) => {
 
   const { broadcastId } = await params;
-  const broadcastIdStatus = await getBroadcastIdStatus(broadcastId);
+  const broadcastInfo = await getBroadcastInfo(broadcastId);
 
-  if (broadcastIdStatus == null) {
+  if (broadcastInfo == null) {
     notFound()
   }
 
-  const { isAvailable } = broadcastIdStatus;
+  const { isAvailable, channels, currentChannelId } = broadcastInfo;
   const obsBroadcastUrl = `${process.env.HOST_URL}/api/whip/${broadcastId}`;
 
   return (
@@ -47,6 +48,11 @@ const BroadcasterPage: React.FC<{
       />
       <ObsBroadcastUrlPanel
         obsBroadcastUrl={obsBroadcastUrl}
+      />
+      <ChannelsPanel 
+        broadcastId={broadcastId}
+        channels={channels} 
+        currentChannelId={currentChannelId}
       />
       <StreamIdPanel broadcastId={broadcastId} />
     </div>
