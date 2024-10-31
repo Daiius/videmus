@@ -17,6 +17,8 @@ const config: Config = {
         primary: colors.slate[600],
         'primary-hover': colors.slate[500],
         'primary-highlight': colors.slate[400],
+        danger: colors.red[400],
+        success: colors.green[400],
       },
     },
   },
