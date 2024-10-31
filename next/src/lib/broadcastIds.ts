@@ -5,7 +5,7 @@ import {
   channels,
 } from 'videmus-database/db/schema';
 import { nanoid } from 'nanoid';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 
 type NonNullables<T> = {
   [K in keyof T]: NonNullable<T[K]>;
@@ -82,7 +82,7 @@ export const getBroadcastInfo = async (broadcastId: string): Promise<{
   const relatedChannels = await tx.select()
     .from(channels)
     .where(eq(channels.broadcastId, broadcastId))
-    .orderBy(desc(channels.createdTime));
+    .orderBy(asc(channels.createdTime));
 
   if (rawBroadcastInfo.currentChannelId != null) {
     return {
@@ -114,13 +114,13 @@ export const getBroadcastInfo = async (broadcastId: string): Promise<{
       .where(eq(broadcastIds.id, broadcastId));
   }
   
-  const [retriedBroadcstInfo] = await db.select()
+  const [retriedBroadcstInfo] = await tx.select()
     .from(broadcastIds)
     .where(eq(broadcastIds.id, broadcastId));
   const retriedRelatedChannels = await tx.select()
     .from(channels)
     .where(eq(channels.broadcastId, broadcastId))
-    .orderBy(desc(channels.createdTime));
+    .orderBy(asc(channels.createdTime));
 
   if (retriedBroadcstInfo.currentChannelId == null) {
     // もしこの期に及んでcurrentChannelIdがnullなら諦める
@@ -135,4 +135,14 @@ export const getBroadcastInfo = async (broadcastId: string): Promise<{
     currentChannelId: retriedBroadcstInfo.currentChannelId,
   }
 });
+
+export const updateCurrentChannel = async (
+  broadcastId: string,
+  newCurrentChannelId: string,
+) => {
+  await db
+    .update(broadcastIds)
+    .set({ currentChannelId: newCurrentChannelId })
+    .where(eq(broadcastIds.id, broadcastId));
+};
 
