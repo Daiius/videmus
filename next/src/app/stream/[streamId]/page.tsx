@@ -1,5 +1,6 @@
 
 import WebRtcVideo from '@/components/WebRtcVideo';
+import StreamingStatusPanel from '@/components/StreamingStatusPanel';
 
 const StreamPage: React.FC<{
   params: Promise<{
@@ -10,8 +11,9 @@ const StreamPage: React.FC<{
   const { streamId } = await params;
 
   return (
-    <div>
+    <div className='flex flex-col gap-2'>
       <WebRtcVideo streamId={streamId} />
+      <StreamingStatusPanel channelId={streamId} />
     </div>
   );
 };
