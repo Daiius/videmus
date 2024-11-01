@@ -51,7 +51,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY ./next/package.json ./next/next.config.mjs ./
-#COPY --from=build /workspace/next/public ./next/public
+COPY --from=build /workspace/next/public ./next/public
 COPY --from=build /workspace/next/.next/standalone ./
 COPY --from=build /workspace/next/.next/static ./next/.next/static/
 #COPY --from=build /workspace/next/.next/server ./next/.next/server/
