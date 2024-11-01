@@ -19,6 +19,7 @@ const config: Config = {
         'primary-highlight': colors.slate[400],
         danger: colors.red[400],
         success: colors.green[400],
+        active: colors.blue[500],
       },
     },
   },
