@@ -8,9 +8,14 @@ import {
 
 export const createWebRtcStreams = async (
   streamId: string,
-  // 接続が調子が悪いときに最初に呼ばれます
+  /** 
+   * 接続の調子が悪いときに最初に呼ばれます 
+   * (この時点で再接続を試みるのも手です)
+   */
   onDisconnected?: () => void,
-  // 接続を完全に失った際に呼ばれます
+  /** 
+   * 接続を完全に失った際に呼ばれます 
+   */
   onFailed?: () => void,
 ): Promise<Consumer[]> => {
 
