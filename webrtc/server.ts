@@ -83,24 +83,28 @@ app.post('/whip/:id', async (req, res) => {
       .where(
         eq(broadcastIds.id, resourcesId)
       );
-
     if (searchedEntries.length === 0) {
       res.status(404)
         .send(`resoures with id ${resourcesId} doesn't exist`);
       return;
     }
-
     const searchedEntry = searchedEntries[0];
     if (!searchedEntry.isAvailable) {
       res.status(403)
         .send(`resources with id ${resourcesId} is not avaliable yet`);
       return;
     }
+    const currentChannelId = searchedEntry.currentChannelId;
+    if (currentChannelId == null) {
+      res.status(404)
+        .send(`current channel id is not set`);
+      return;
+    }
 
     console.log(`/whip/${resourcesId} post access`);
     resourcesDict[resourcesId] = {
       router: await worker.createRouter({ mediaCodecs }),
-      streamId: nanoid(), // 視聴用IDを別に与える
+      streamId: currentChannelId, // 視聴用IDを別に与える
       streamerResources: [],
       broadcasterResources: {
         broadcasterTransport: undefined,
@@ -317,6 +321,28 @@ app.get('/stream-id/:broadcastId', async (req, res) => {
 
   const streamId = resourcesDict[broadcastId].streamId;
   res.status(200).send({ streamId });
+});
+
+app.post('/current-channel/:broadcastId', async (req, res) => {
+  const broadcastId = req.params.broadcastId;
+  const broadcastInfos = await db.select()
+    .from(broadcastIds)
+    .where(eq(broadcastIds.id, broadcastId));
+  if (broadcastInfos.length === 0) {
+    res.status(404).send(`specified broadcast id is not registered`);
+    return;
+  }
+
+  const params = req.body;
+  // TODO 
+  // 配信開始前にはリソースが存在しないがどうするか？
+  if (!(broadcastId in resourcesDict)) {
+    res.status(202).send(`broadcast has not started.`);
+    return;
+  } 
+  resourcesDict[broadcastId].streamId = params.currentChannelId;
+
+  res.status(200).send('success: current channel modified');
 });
 
 app.get('/mediasoup/router-rtp-capabilities/:id', async (req, res) => {
