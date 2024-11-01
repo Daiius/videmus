@@ -6,8 +6,8 @@ import { getBroadcastInfo } from '@/lib/broadcastIds';
 
 import BroadcastIdPanel from '@/components/BroadcastIdPanel';
 import ObsBroadcastUrlPanel from '@/components/ObsBroadcastUrlPanel';
-import StreamIdPanel from '@/components/StreamIdPanel';
 import ChannelsPanel from '@/components/ChannelsPanel';
+import BroadcastingStatusPanel from '@/components/BroadcastingStatusPanel';
 import HelpPanel from '@/components/HelpPanel';
 
 /**
@@ -53,7 +53,9 @@ const BroadcasterPage: React.FC<{
         channels={channels} 
         currentChannelId={currentChannelId}
       />
-      <StreamIdPanel broadcastId={broadcastId} />
+      <BroadcastingStatusPanel 
+        broadcastId={broadcastId}
+      />
       <HelpPanel />
     </div>
   );
