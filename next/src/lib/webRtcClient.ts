@@ -7,7 +7,11 @@ import {
 } from 'mediasoup-client/lib/types';
 
 export const createWebRtcStreams = async (
-  streamId: string
+  streamId: string,
+  // 接続が調子が悪いときに最初に呼ばれます
+  onDisconnected?: () => void,
+  // 接続を完全に失った際に呼ばれます
+  onFailed?: () => void,
 ): Promise<Consumer[]> => {
 
   const baseUrl = `${process.env.NEXT_PUBLIC_HOST_URL}${process.env.NEXT_PUBLIC_WITHOUT_API ? '' : '/api'}`;
@@ -51,8 +55,9 @@ export const createWebRtcStreams = async (
   );
   transport.on('connectionstatechange', (connectionState) => {
     if (connectionState === 'failed') {
-      console.log('TODO retrying ...');
-      setTimeout(() => window.location.reload(), 2_000);
+      onFailed?.();
+    } else if (connectionState === 'disconnected') {
+      onDisconnected?.();
     }
   });
 
