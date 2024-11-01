@@ -291,7 +291,7 @@ app.delete('/whip/test-broadcast/:id', async (req, res) => {
   }
 });
 
-app.get('/stream-id/:broadcastId', async (req, res) => {
+app.get('/broadcasting-status/:broadcastId', async (req, res) => {
   const broadcastId = req.params.broadcastId;
 
   const searchedEntries = await db.select()
@@ -309,18 +309,53 @@ app.get('/stream-id/:broadcastId', async (req, res) => {
   const searchedEntry = searchedEntries[0];
   if (!searchedEntry.isAvailable) {
     res.status(202)
-      .send(`resources with id ${broadcastId} is not avaliable yet`);
+      .send({
+        isBroadcasting: false,
+        streamingCount: 0,
+      });
     return;
   }
 
   if (!(broadcastId in resourcesDict)) {
-    res.status(202)
-      .send(`resources with broadcastId ${broadcastId} is not yet created`);
+    res.status(200)
+      .send({
+        isBroadcasting: false,
+        streamingCount: 0,
+      });
     return;
   }
 
-  const streamId = resourcesDict[broadcastId].streamId;
-  res.status(200).send({ streamId });
+  const streamingCount = 
+    resourcesDict[broadcastId].streamerResources.length;
+
+  res.status(200).send({ 
+    streamingCount,
+    isBroadcasting: true,
+  });
+});
+
+app.get('/streaming-status/:channelId', async (req, res) => {
+  try {
+    const channelId = req.params.channelId;
+    const resources = Object.values(resourcesDict)
+      .find(resources => resources.streamId === channelId);
+    if (resources == null) {
+      res.status(404)
+        .send(`resoures with stream id ${channelId} doesn't exist`);
+      return;
+    }
+
+    // TODO 
+    // 配信が終了すると404になるので
+    // isBroadcasting を返すのはどうなのだろう...
+    res.status(200).send({
+      streamingCount: resources.streamerResources.length,
+      isBroadcasting: true,
+    });
+
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
 app.post('/current-channel/:broadcastId', async (req, res) => {
