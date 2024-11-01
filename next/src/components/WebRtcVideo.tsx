@@ -2,7 +2,6 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import { useWebRtcStreams } from '@/hooks/useWebRtcStream';
 
 import { createWebRtcStreams } from '@/lib/webRtcClient';
 

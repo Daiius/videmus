@@ -15,12 +15,18 @@ export const createWebRtcStreams = async (
   const routerRtpCapabilitiesResponse = await fetch(
     `${baseUrl}/mediasoup/router-rtp-capabilities/${streamId}`
   );
+  if (!routerRtpCapabilitiesResponse.ok) {
+    throw new Error(`channel ${streamId} seems to be closed.`);
+  }
   const routerRtpCapabilities = await routerRtpCapabilitiesResponse.json();
   const device = new Device();
   await device.load({ routerRtpCapabilities });
   const transportParametersResponse = await fetch(
     `${baseUrl}/mediasoup/streamer-transport-parameters/${streamId}`
   );
+  if (!transportParametersResponse.ok) {
+    throw new Error(`failed to fetch streaming parameters`);
+  }
   const transportParameters = await transportParametersResponse.json();
   const transport = device.createRecvTransport(transportParameters);
   transport.on(
@@ -43,6 +49,12 @@ export const createWebRtcStreams = async (
       }
     }
   );
+  transport.on('connectionstatechange', (connectionState) => {
+    if (connectionState === 'failed') {
+      console.log('TODO retrying ...');
+      setTimeout(() => window.location.reload(), 2_000);
+    }
+  });
 
   const consumerParametersResponse = await fetch(
     `${baseUrl}/mediasoup/consumer-parameters/${streamId}/${transportParameters.id}`, {
@@ -50,6 +62,9 @@ export const createWebRtcStreams = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(device.rtpCapabilities),
   });
+  if (!consumerParametersResponse.ok) {
+    throw new Error(`failed to fetch comsumer parameters`);
+  }
 
   const consumerParameters: {
     id: string;
