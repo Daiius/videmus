@@ -3,13 +3,12 @@ import clsx from 'clsx';
 import { notFound } from 'next/navigation';
 
 import { getBroadcastInfo } from '@/lib/broadcastIds';
-import StreamIdChecker from '@/components/StreamIdChecker';
 
-import Panel from '@/components/Panel';
 import BroadcastIdPanel from '@/components/BroadcastIdPanel';
 import ObsBroadcastUrlPanel from '@/components/ObsBroadcastUrlPanel';
 import StreamIdPanel from '@/components/StreamIdPanel';
 import ChannelsPanel from '@/components/ChannelsPanel';
+import HelpPanel from '@/components/HelpPanel';
 
 /**
  * IDを発行した配信者用のページ
@@ -55,6 +54,7 @@ const BroadcasterPage: React.FC<{
         currentChannelId={currentChannelId}
       />
       <StreamIdPanel broadcastId={broadcastId} />
+      <HelpPanel />
     </div>
   );
 };
