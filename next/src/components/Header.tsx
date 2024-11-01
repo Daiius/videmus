@@ -1,4 +1,6 @@
 import clsx from 'clsx';
+import Link from 'next/link';
+
 import { Vidaloka } from 'next/font/google'
 
 const vidaloka = Vidaloka({ 
@@ -13,13 +15,16 @@ const Header: React.FC = () => (
       'px-2',
     )}
   >
-    <div className={clsx(
-      'self-center',
-      vidaloka.className
-    )}>
+    <Link 
+      className={clsx(
+        'self-center',
+        vidaloka.className
+      )}
+      href='/'
+    >
       <span className='text-4xl'>V</span>
       <span className='text-2xl -ml-[0.3rem]'>idemus</span>
-    </div>
+    </Link>
   </div>
 );
 

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import { useWebRtcStreams } from '@/hooks/useWebRtcStream';
 
 import { createWebRtcStreams } from '@/lib/webRtcClient';
 
@@ -13,14 +12,31 @@ const WebRtcVideo: React.FC<{
 }) => {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [mounted, setMounted] = React.useState<boolean>(false);
-  //const { consumers } = useWebRtcStreams({ streamId });
+  const [message, setMessage] = React.useState<string>('');
+  const [retryCount, setRetryCount] = React.useState<number>(0);
+
   React.useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
+    setMounted(true);
+    if (mounted) {
       (async () => {
         if (videoRef.current) {
           try {
-            const consumers = await createWebRtcStreams(streamId);
+            const consumers = await createWebRtcStreams(
+              streamId,
+              () => {
+                setMessage('connection is unstable, reconnecting...');
+                setTimeout(
+                  () => setRetryCount(count => count + 1), 
+                  2_000
+                );
+              },
+              () => {
+                setMessage(
+                  'connection is failed, but maybe last disconnected one... doing nothing.'
+                );
+                //setTimeout(() => window.location.reload(), 2_000);
+              }
+            );
             console.log('consumers: %o', consumers);
             const stream = new MediaStream();
             consumers.forEach(c => {
@@ -31,20 +47,30 @@ const WebRtcVideo: React.FC<{
             await videoRef.current?.play();
             console.log('video.play() called!');
           } catch (err) {
+            err instanceof Error
+              ? setMessage(err.message)
+              : setMessage(`unknown error, see console...`);
             console.error('error while playing video: ', err);
           }
         }
       })();
     }
-  }, []);
+  }, [mounted, retryCount]);
 
   return (
-    <video
-      ref={videoRef} 
-      className={clsx('w-full')}
-      autoPlay controls muted playsInline
-    >
-    </video>
+    <div className='relative'>
+      {message && 
+        <div>
+          <div>{message}</div>
+        </div>
+      }
+      <video
+        ref={videoRef} 
+        className={clsx('w-full')}
+        autoPlay controls muted playsInline
+      >
+      </video>
+    </div>
   );
 };
 

@@ -11,7 +11,7 @@ export default function Home() {
       'flex flex-col gap-2',
       'lg:px-52 md:px-12',
     )}>
-      <Panel title='Videmusについて'>
+      <Panel panelTitle='Videmusについて'>
         <div>
           小規模・低遅延の動画配信Webアプリケーションです
         </div>
@@ -23,14 +23,14 @@ export default function Home() {
         'flex flex-col',
         'md:grid md:grid-cols-2 gap-2'
       )}>
-        <Panel title='配信する'>
+        <Panel panelTitle='配信する'>
           <Link href='/broadcast'>
             <Button>
               新規配信ページへ
             </Button>
           </Link>
         </Panel>
-        <Panel title='視聴する'>
+        <Panel panelTitle='視聴する'>
           <div>
             配信者から視聴用URLを教えてもらってアクセスしましょう
           </div>

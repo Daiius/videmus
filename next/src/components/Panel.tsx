@@ -2,9 +2,9 @@ import clsx from 'clsx';
 
 const Panel: React.FC<
   React.ComponentProps<'div'>
-  & { title?: string; }
+  & { panelTitle?: React.ReactNode; }
 > = ({
-  title,
+  panelTitle,
   children,
   className,
   ...props
@@ -16,11 +16,11 @@ const Panel: React.FC<
     )}
     {...props}
   >
-    {title &&
+    {panelTitle &&
       <div className={clsx(
         'text-lg font-bold mb-2 -mt-2 -ml-1',
       )}>
-        {title}
+        {panelTitle}
       </div>
     }
     {children}

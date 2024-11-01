@@ -35,7 +35,7 @@ const ObsBroadcastUrlPanel: React.FC<
   const [isCopied, setIsCopied] = React.useState<boolean>(false);
   return (
     <Panel
-      title='OBS配信用URL'
+      panelTitle='OBS配信用URL'
       className={clsx(className)}
       {...props}
     >
