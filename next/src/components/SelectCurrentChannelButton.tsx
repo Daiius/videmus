@@ -26,10 +26,18 @@ const SelectCurrentChannelButton: React.FC<
     <Button
       className={clsx(className)}
       onClick={async () => {
+        // データベースの現在のチャネルを書き換え
         await updateCurrentChannel(
           broadcastId,
           channelId,
         );
+        // 配信中ならリソースのチャンネルIDも書き換え
+        // (配信前なら202ステータス)
+        await fetch(
+          ` ${process.env.NEXT_PUBLIC_HOST_URL}/api/current-channel/${broadcastId}`, {
+            method: 'POST',
+            body: JSON.stringify({ channelId, }),
+        });
         router.refresh();
       }}
       {...props}

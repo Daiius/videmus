@@ -18,7 +18,7 @@ const BroadcastIdPanel: React.FC<
   ...props
 }) => (
   <Panel 
-    title='ID'
+    panelTitle='ID'
     className={clsx(className)}
     {...props}
   >
