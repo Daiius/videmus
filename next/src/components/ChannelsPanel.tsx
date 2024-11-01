@@ -31,6 +31,7 @@ const ChannelsPanel: React.FC<
     )}>
       {channels.map(channel =>
         <ChannelPanel 
+          key={channel.id}
           channel={channel} 
           currentChannelId={currentChannelId}
           canDelete={channels.length > 1}
