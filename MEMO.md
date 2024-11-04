@@ -62,7 +62,7 @@ OAuthを使った管理をすれば利用者を増やしてもいけるが、
 sequenceDiagram
     actor broadcaster as 配信者
     participant obs as 配信者OBS
-    box rgb(250,250,250) Videmus Next.js
+    box rgba(128,128,128,0.1) Videmus Next.js
         participant broadcaster_page as 配信画面
         participant streamer_page as 視聴画面
     end
