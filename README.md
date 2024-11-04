@@ -87,7 +87,11 @@ OBS配信設定もこのページに一緒に示されています。
 次のコマンドでVidemus Next.jsイメージと
 Videmus WebRTCサーバイメージをビルドします
 
-`docker build -t <任意のVidemus Next.jsイメージ名> -f ./next/Dockerfile.nextjs.prod .`
+`docker build -e NEXT\_PUBLIC\_HOST\_URL=<本番環境のVidemus Next.jsのURL> -t <任意のVidemus Next.jsイメージ名> -f ./next/Dockerfile.nextjs.prod .`
+> [!IMPORTANT]
+> Next.jsはNEXT_PUBLIC_から始まる環境変数の値をビルド時に
+> 埋め込みますので、この時点で指定する必要があります
+> 他の環境変数は本番環境のdocker-compose.ymlファイルなどで指定できます
 
 `docker build -t <任意のVidemus WebRTCサーバイメージ名> -f ./webrtc/Dockerfile.webrtc.prod .`
 
