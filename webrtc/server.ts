@@ -587,27 +587,4 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
 });
 
 const httpServer = createServer(app);
-let connections: Socket[] = [];
-httpServer.listen(3000, () => {
-  console.log('mediasoup server running on port 3000');
-});
-httpServer.on('connection', (conn) => {
-  connections.push(conn);
-  conn.on('close', () => {
-    connections = connections.filter(curr => curr !== conn);
-  });
-});
-
-const shutdown = () => {
-  console.log('Recieved shutdown signal');
-  httpServer.close(() => console.log('http server closed'));
-  worker.close();
-  console.log('mediasoup worker closed');
-  connections.forEach(conn => conn.destroy());
-
-  process.exit(0);
-};
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
 
