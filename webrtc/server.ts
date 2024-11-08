@@ -1,5 +1,4 @@
 import { createServer } from 'http';
-import { Socket } from 'net';
 import express from 'express';
 import { createWorker } from 'mediasoup';
 import { 
@@ -26,7 +25,6 @@ import { eq } from 'drizzle-orm';
 import { db } from 'videmus-database/db';
 import { broadcastIds } from 'videmus-database/db/schema';
 
-import { nanoid } from 'nanoid';
 
 const test = await db.select().from(broadcastIds);
 console.log(test);
