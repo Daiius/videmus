@@ -25,7 +25,7 @@ services:
       - .env.webrtc
       - .env.database
     environment:
-      DEBUG: "mediasoup*"
+      DEBUG: "mediasoup*,videmus:webrtc*"
       TZ: 'Asia/Tokyo'
     ports:
       - "50000-50100:50000-50100/udp"
