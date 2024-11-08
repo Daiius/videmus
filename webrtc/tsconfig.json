@@ -1,0 +1,23 @@
+// https://tsx.is/typescript にある設定を参照しつつ
+// 部分的に変更したtsconfig.jsonを作成
+//
+// ただ、tscが通る様にオプションを変更した印象が強く
+// 本当に必要な設定はなんであるのか完全に理解できていない気がする
+// 本当なら適切な設定に合わせてソース等修正するべきでは
+{
+  "compilerOptions": {
+    // https://tsx.is/typescript に示されている recommendation
+    "moduleDetection": "force",
+    "module": "Preserve",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+
+    // このプロジェクトに合わせて修正
+    "target": "esnext",   // top-level await を用いるため必要
+    "skipLibCheck": true, // node_modules内のファイルはチェックしない
+    "noEmit": true        // tsx で実行するためファイル出力は無し
+  }
+}
+

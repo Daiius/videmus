@@ -5,6 +5,8 @@
   "type": "module",
   "exports": "./dist/server.js",
   "dependencies": {
+    "@types/debug": "^4.1.12",
+    "debug": "^4.3.7",
     "drizzle-orm": "^0.35.3",
     "express": "^4.21.1",
     "mediasoup": "^3.14.15",

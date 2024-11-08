@@ -1,6 +1,8 @@
 import { createServer } from 'http';
-import { Socket } from 'net';
 import express from 'express';
+
+import { debug, warn, error } from './logger';
+
 import { createWorker } from 'mediasoup';
 import { 
   Worker,
@@ -26,10 +28,9 @@ import { eq } from 'drizzle-orm';
 import { db } from 'videmus-database/db';
 import { broadcastIds } from 'videmus-database/db/schema';
 
-import { nanoid } from 'nanoid';
 
 const test = await db.select().from(broadcastIds);
-console.log(test);
+debug(test);
 
 const app = express();
 app.use(express.json());
@@ -65,7 +66,7 @@ const worker: Worker = await createWorker({
   rtcMinPort: 50000,
   rtcMaxPort: 50100,
 });
-console.log('Worker created');
+debug('Worker created');
 
 const resourcesDict: ResourcesDict = {};
 
@@ -101,7 +102,7 @@ app.post('/whip/:id', async (req, res) => {
       return;
     }
 
-    console.log(`/whip/${resourcesId} post access`);
+    debug(`/whip/${resourcesId} post access`);
     resourcesDict[resourcesId] = {
       router: await worker.createRouter({ mediaCodecs }),
       streamId: currentChannelId, // 視聴用IDを別に与える
@@ -161,7 +162,7 @@ app.post('/whip/:id', async (req, res) => {
 
     broadcasterTransport.observer.on(
       'icestatechange', 
-      (newIceState) => console.log(
+      (newIceState) => debug(
         `broadcaster ICE state changed to: ${newIceState}`
       )
     );
@@ -181,13 +182,13 @@ app.post('/whip/:id', async (req, res) => {
 
     for (const { type, mid } of localSdpObject.media) {
 
-      console.log('type, mid: ', { type, mid });
+      debug('type, mid: ', { type, mid });
 
       const mediaSectionIdx = 
         remoteSdp.getNextMediaSectionIdx();
       const offerMediaObject = 
         localSdpObject.media[mediaSectionIdx.idx];
-      console.log('offerMediaObject: ', offerMediaObject);
+      debug('offerMediaObject: ', offerMediaObject);
 
       const sendingRtpParameters: RtpParameters = { 
         ...sendingRtpParametersByKind[type as 'video' | 'audio']
@@ -203,8 +204,8 @@ app.post('/whip/:id', async (req, res) => {
       sendingRtpParameters.encodings =
         sdpUnifiedPlanUtils.getRtpEncodings({ offerMediaObject });
     
-      console.log('%o', sendingRtpParameters);
-      console.log('%o', sendingRemoteRtpParameters);
+      debug('%o', sendingRtpParameters);
+      debug('%o', sendingRemoteRtpParameters);
 
       remoteSdp.send({
         offerMediaObject,
@@ -220,7 +221,7 @@ app.post('/whip/:id', async (req, res) => {
         rtpParameters: sendingRtpParameters
       });
   
-      console.log('producer created: ', producer);
+      debug('producer created: ', producer);
 
       resourcesDict[resourcesId]
         .broadcasterResources
@@ -229,7 +230,7 @@ app.post('/whip/:id', async (req, res) => {
     }
 
     const answer = remoteSdp.getSdp();
-    console.log('answer: ', answer);
+    debug('answer: ', answer);
 
     res
       .type('application/sdp')
@@ -239,8 +240,8 @@ app.post('/whip/:id', async (req, res) => {
       )
       .status(201)
       .send(answer.toString());
-  } catch (error) {
-    console.error('Error during WebRTC offer handling: ', error);
+  } catch (err) {
+    error('Error during WebRTC offer handling: ', err);
     res.status(500).send(`Error during WebRTC offer handling: ${error}`);
   }
 });
@@ -261,13 +262,13 @@ app.delete('/whip/test-broadcast/:id', async (req, res) => {
     const streamerResources =
       resourcesDict[resourcesId].streamerResources;
 
-    console.log(
+    debug(
       'broadcasterTransport stats: %o', 
       await broadcasterTransport?.getStats()
     );
 
     for (const producer of broadcasterResources.producers) {
-      console.log('producer stats: %o', await producer.getStats());
+      debug('producer stats: %o', await producer.getStats());
     }
     // routerを消してしまうと再接続が難しい、
     // 一旦キープしてtransportだけ再生成してみる？
@@ -284,9 +285,9 @@ app.delete('/whip/test-broadcast/:id', async (req, res) => {
 
     res.status(200)
       .send(`router ${resourcesId} closed.`);
-    console.log(`transport: ${broadcasterTransport?.id} closed.`);
+    debug(`transport: ${broadcasterTransport?.id} closed.`);
   } catch (err) {
-    console.error(`Error at ending broadcasting: ${err}`);
+    error(`Error at ending broadcasting: ${err}`);
     res.status(500).send(`Error at ending broadcasting: ${err}`);  
   }
 });
@@ -393,7 +394,7 @@ app.get('/mediasoup/router-rtp-capabilities/:id', async (req, res) => {
     const router = resources.router;
     res.status(200).send(router.rtpCapabilities);
   } catch (err) {
-    console.error(`Error at GET router-rtp-capabilities: ${err}`);
+    error(`Error at GET router-rtp-capabilities: ${err}`);
     res.status(500).send(`Error at GET router-rtp-capabilities: ${err}`);  
   }
 });
@@ -416,7 +417,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
     const streamerTransport = await createWebRtcTransport(router);
 
     streamerTransport.on('icestatechange', (state: IceState) => {
-      console.log(`streamerTransport (${streamerTransport.id}) ice stage changed to ${state}`);
+      debug(`streamerTransport (${streamerTransport.id}) ice stage changed to ${state}`);
       if (state === 'disconnected') {
         const streamerResource = resources
           .streamerResources
@@ -431,7 +432,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
             .filter(resource => 
               resource.streamerTransport.id !== streamerTransport.id
             );
-          console.log(`streamer resources (${streamerTransport.id}) has been released`);
+          debug(`streamer resources (${streamerTransport.id}) has been released`);
         }
       }
     });
@@ -448,7 +449,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
       iceCandidates: streamerTransport.iceCandidates,
     });
   } catch (err) {
-    console.error(`Error at GET streamer-transport-parameters: ${err}`);
+    error(`Error at GET streamer-transport-parameters: ${err}`);
     res.status(500).send(`Error at GET streamer-transport-parameters: ${err}`);  
   }
 });
@@ -479,11 +480,11 @@ app.post('/mediasoup/client-connect/:streamId/:transportId', async (req, res) =>
 
     await streamerTransport.connect({ dtlsParameters });
     streamerTransport.on('icestatechange', (iceState) =>
-      console.log('streamer transport ice change: ', iceState)
+      debug('streamer transport ice change: ', iceState)
     );
     res.status(200).send('client connect callback handled');
   } catch (err) {
-    console.error(`Error at POST client-connect: ${err}`);
+    error(`Error at POST client-connect: ${err}`);
     res.status(500).send(`Error at POST client-connect: ${err}`);  
   }
 });
@@ -511,7 +512,7 @@ app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, re
         return;
     }
 
-    console.log('consumer-parameters: ', streamId, transportId); 
+    debug('consumer-parameters: ', streamId, transportId); 
 
     const broadcasterResources = resources.broadcasterResources;
     const router = resources.router;
@@ -535,7 +536,7 @@ app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, re
             rtpCapabilities: clientCapabilities,
             paused: true,
           });
-        console.log('consumer created: ', consumer.id, consumer.kind);
+        debug('consumer created: ', consumer.id, consumer.kind);
         streamerResource.consumers.push(consumer);
         consumerParameters.push({
           id: consumer.id,
@@ -544,7 +545,7 @@ app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, re
           rtpParameters: consumer.rtpParameters,
         });
       } else {
-        console.warn(
+        warn(
           `streamId ${streamId} cannot consume producer ${producer.id}`
         );
       }
@@ -552,7 +553,7 @@ app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, re
 
     res.status(200).send(consumerParameters);
   } catch (err) {
-    console.error(`Error at POST consumer-parameters: ${err}`);
+    error(`Error at POST consumer-parameters: ${err}`);
     res.status(500).send(`Error at POST consumer-parameters: ${err}`);  
   }
 });
@@ -581,33 +582,15 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
     streamerResource.consumers.forEach(async c => await c.resume());
     res.status(200).send();
   } catch (err) {
-    console.error(`Error at POST resume-consumer: ${err}`);
+    error(`Error at POST resume-consumer: ${err}`);
     res.status(500).send(`Error at POST resume-consumer: ${err}`);  
   }
 });
 
 const httpServer = createServer(app);
-let connections: Socket[] = [];
-httpServer.listen(3000, () => {
-  console.log('mediasoup server running on port 3000');
-});
-httpServer.on('connection', (conn) => {
-  connections.push(conn);
-  conn.on('close', () => {
-    connections = connections.filter(curr => curr !== conn);
-  });
-});
+httpServer.listen(
+  3000, 
+  () => console.log('videmus webrtc server started on port 3000'),
+);
 
-const shutdown = () => {
-  console.log('Recieved shutdown signal');
-  httpServer.close(() => console.log('http server closed'));
-  worker.close();
-  console.log('mediasoup worker closed');
-  connections.forEach(conn => conn.destroy());
-
-  process.exit(0);
-};
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
 
