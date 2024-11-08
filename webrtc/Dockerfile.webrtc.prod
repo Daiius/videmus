@@ -16,7 +16,7 @@ FROM gcr.io/distroless/nodejs20:debug
 WORKDIR /workspace/webrtc
 
 COPY ./webrtc/package.json ./
-COPY ./webrtc/server.ts ./webrtc/codecs.ts ./webrtc/resources.ts ./
+COPY ./webrtc/server.ts ./webrtc/codecs.ts ./webrtc/resources.ts ./webrtc/logger.ts ./
 COPY ./database/db/index.ts ./database/db/schema.ts /workspace/database/db/ 
 COPY --from=node_modules /workspace/node_modules /workspace/node_modules
 COPY --from=node_modules /workspace/webrtc/node_modules /workspace/webrtc/node_modules
