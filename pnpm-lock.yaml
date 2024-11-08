@@ -108,6 +108,12 @@ importers:
 
   webrtc:
     dependencies:
+      '@types/debug':
+        specifier: ^4.1.12
+        version: 4.1.12
+      debug:
+        specifier: ^4.3.7
+        version: 4.3.7(supports-color@9.4.0)
       drizzle-orm:
         specifier: ^0.35.3
         version: 0.35.3(@libsql/client-wasm@0.14.0)(@types/react@18.3.12)(mysql2@3.11.3)(react@18.3.1)
