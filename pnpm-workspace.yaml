@@ -3,3 +3,7 @@ packages:
   - webrtc
   - database
 
+onlyBuiltDependencies:
+  - esbuild
+  - mediasoup
+  - sharp

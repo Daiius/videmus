@@ -589,7 +589,7 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
 
 const httpServer = createServer(app);
 httpServer.listen(
-  3000, 
+  3000,
   () => console.log('videmus webrtc server started on port 3000'),
 );
 

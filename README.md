@@ -8,9 +8,8 @@
 videmusが`https://videmus.example.com`に配置されているとして
 使用方法を説明します
 
-基本的にトップページ
 `https://videmus.example.com` にアクセスすれば
-簡易的な説明付きで案内されますので、それに従って配信・視聴できます
+簡易的な説明付に従って配信・視聴できます
 
 ### 配信方法
 #### 配信ID発行
@@ -19,32 +18,30 @@ videmusが`https://videmus.example.com`に配置されているとして
 ![Videmus top page screen shot](docs/videmus-top-page.png)
 
 
-「新規配信IDを生成」ボタンを押すと配信用IDが無効状態で発行され、
-配信管理用ページに遷移します
+「新規配信IDを生成」ボタンを押します。
+
+配信用IDが無効状態で発行され、 配信管理用ページに遷移します
 ![Videmus broadcast page screen shot](docs/videmus-broadcast-page.png)
 
 > [!IMPORTANT]
-> 配信用IDは管理者を除く他の人には秘密にするか、
-> 少人数のグループ内でのみ共有するようにして下さい
+> 配信用IDは管理者を除く他の人には秘密にするか、少人数でのみ共有して下さい
 >
-> これはあなた自身のVidemusにおける身分証の様なもので、
-> 有効化されたIDが第三者に知られた場合、配信の乗っ取りや操作を容易に
-> 行われてしまいます
+> これはVidemusにおけるあなたの身分証で、
+> 第三者に知られた場合、配信を乗っ取られてしまいます
 
 #### 配信管理用ページ
-配信管理用ページは `https://videmus.example.com/broadcast/<配信用ID>`
-というURLにあります。
+配信管理用ページは `https://videmus.example.com/broadcast/<配信用ID>` にあります。
 ここでは配信・視聴状況の確認と設定を行うことが出来ます。
 ![Videmus broadcast control page screen shot](docs/videmus-broadcast-id-page.png)
 
 
-配信を行うために、管理者と連絡を取って配信IDを伝え
-（全文字でなく、最初の5~6文字でも十分識別できるでしょう）
-有効化してもらえる様に伝えて下さい。
+配信を行うために、管理者と連絡を取って配信IDを伝え、 有効化する様に伝えてみて下さい。
+（全文字でなく、最初の5~6文字でも十分に伝わります）
 
-管理者は（現在のところは直接データベース内の該当行を編集することで）
-伝えられたIDにしたがって、`BroadcastIds` テーブルの `is_available` 列を
+管理者は伝えられたIDについて、
+`BroadcastIds` テーブルの `is_available` 列を
 `0` から `1` に書き換えて有効化します
+（現在のところは直接データベース内の該当行を編集します）
 
 OBS配信設定もこのページに一緒に示されています。
 
@@ -54,13 +51,13 @@ OBS配信設定もこのページに一緒に示されています。
 それを視聴者に伝えれば、配信者の準備は完了です。
 
 ### 視聴方法
-配信者から伝えられた視聴用URLにアクセスすれば、
-動画を見ることができます。
+配信者から伝えられた視聴用URLにアクセスします。
 
 
 ## テスト環境起動方法
-1. Gitリポジトリをクローンしたら、プロジェクトディレクトリ内で
-   `pnpm install` を実行し、依存パッケージをインストールします
+1. Gitリポジトリをクローン
+2. プロジェクトディレクトリ内で `pnpm install` を実行
+   (mediasoupなどbuildの許可を要求された場合には許可してください)
 2. 以下の環境変数ファイルをテスト環境に合わせて記述します
    - ```env:.env.database
      DB_HOST=database
@@ -89,20 +86,15 @@ Videmus WebRTCサーバイメージをビルドします
 
 `docker build -e NEXT\_PUBLIC\_HOST\_URL=<本番環境のVidemus Next.jsのURL> -t <任意のVidemus Next.jsイメージ名> -f ./next/Dockerfile.nextjs.prod .`
 > [!IMPORTANT]
-> Next.jsはNEXT_PUBLIC_から始まる環境変数の値をビルド時に
-> 埋め込みますので、この時点で指定する必要があります
-> 他の環境変数は本番環境のdocker-compose.ymlファイルなどで指定できます
+> Next.jsはNEXT_PUBLIC_から始まる環境変数をビルド時に
+> 埋め込むので、この時点で指定します
+>
+> 他の環境変数は本番環境のdocker-compose.ymlなどで指定できます
 
 `docker build -t <任意のVidemus WebRTCサーバイメージ名> -f ./webrtc/Dockerfile.webrtc.prod .`
 
 
-> アプリケーションの数だけデータベースのコンテナも用意すると
-> メモリ消費が多すぎて実用的でないと判断しました
->
-> 本番環境は他のアプリケーションとも共用のデータベースコンテナが
-> すでに存在すると仮定します
->
-> そのため、データベースコンテナのビルド用設定は含まれません
+> 
 
 これらのイメージを一度プライベートDocker Hubレジストリ等に
 `docker push`する等して送信し、本番環境で使用する準備をします
@@ -110,3 +102,7 @@ Videmus WebRTCサーバイメージをビルドします
 本番環境用にdocker-compose.ymlを作成し、
 `docker compose up -d`コマンドなどで実行できます
 
+### 配置時の注意
+videmus-webrtcコンテナをパフォーマンスのため`network\_mode: host` で運用します。
+ポート指定や他のコンテナとの相互運用、ホスト側のファイアウォール設定など
+注意する必要があります。
