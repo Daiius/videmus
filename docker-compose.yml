@@ -23,12 +23,13 @@ services:
     working_dir: /workspace/app
     env_file:
       - .env.webrtc
-      - .env.database
+      - .env.database-by-ip
     environment:
       DEBUG: "mediasoup*,videmus:webrtc*"
       TZ: 'Asia/Tokyo'
-    ports:
-      - "50000-50100:50000-50100/udp"
+    #ports:
+      #- "50000-50100:50000-50100/udp"
+    network_mode: host
     volumes:
       - ./node_modules:/workspace/node_modules
       - ./webrtc:/workspace/app
@@ -63,6 +64,8 @@ services:
       - /var/lib/mysql # テスト用、データは毎回削除される
     cap_add:
       - SYS_NICE
+    ports:
+      - "127.0.0.1:3306:3306" # network: host の WebRTCサーバからアクセスできるよう
     healthcheck:
       test: mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE -e "select 1;"
       interval: 5s
