@@ -53,10 +53,9 @@ export const channels = mysqlTable('Channels', {
     timestamp('created_time', { mode: 'date' })
       .notNull()
       .defaultNow(),
-}, (table) => ({
-  primaryKey:
+}, (table) => [
     primaryKey({
       columns: [table.id, table.broadcastId]
     }), 
-}));
+]);
 
