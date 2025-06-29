@@ -1,10 +1,10 @@
 import { Device } from 'mediasoup-client';
 import { 
   Consumer,
-  Transport,
+  //Transport,
   MediaKind,
   RtpParameters,
-} from 'mediasoup-client/lib/types';
+} from 'mediasoup-client/types';
 
 export const createWebRtcStreams = async (
   streamId: string,

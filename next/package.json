@@ -9,31 +9,31 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@headlessui/react": "^2.1.10",
-    "@heroicons/react": "^2.1.5",
+    "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
-    "drizzle-orm": "0.35.3",
-    "drizzle-zod": "^0.5.1",
-    "mediasoup": "^3.14.15",
-    "mediasoup-client": "^3.7.17",
-    "mysql2": "3.11.3",
-    "nanoid": "^5.0.7",
-    "next": "^15.0.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "swr": "^2.2.5",
-    "use-debounce": "^10.0.4",
-    "uuid": "^10.0.0",
+    "drizzle-orm": "0.44.2",
+    "drizzle-zod": "^0.8.2",
+    "mediasoup": "^3.16.3",
+    "mediasoup-client": "^3.12.2",
+    "mysql2": "3.14.1",
+    "nanoid": "^5.1.5",
+    "next": "^15.3.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "swr": "^2.3.3",
+    "use-debounce": "^10.0.5",
+    "uuid": "^11.1.0",
     "videmus-database": "workspace:*",
-    "zod": "^3.23.8"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/node": "^24.0.7",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@types/uuid": "^10.0.0",
-    "postcss": "^8",
+    "postcss": "^8.5.6",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   }
 }

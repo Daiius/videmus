@@ -7,7 +7,7 @@ import {
   Transport,
   MediaKind,
   RtpParameters,
-} from 'mediasoup-client/lib/types';
+} from 'mediasoup-client/types';
 
 export const useWebRtcStreams = ({
   streamId 

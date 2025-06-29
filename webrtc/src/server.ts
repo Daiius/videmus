@@ -9,7 +9,7 @@ import {
   RtpParameters,
   MediaKind,
   IceState,
-} from 'mediasoup/node/lib/types';
+} from 'mediasoup/types';
 
 import { mediaCodecs } from './codecs';
 import { 
@@ -17,12 +17,12 @@ import {
   createWebRtcTransport,
 } from './resources';
 
-import { RemoteSdp } from 'mediasoup-client/lib/handlers/sdp/RemoteSdp';
+import { RemoteSdp } from 'mediasoup-client/handlers/sdp/RemoteSdp';
 
 import sdpTransform from 'sdp-transform';
-import ortc from 'mediasoup-client/lib/ortc';
-import sdpCommonUtils from 'mediasoup-client/lib/handlers/sdp/commonUtils';
-import sdpUnifiedPlanUtils from 'mediasoup-client/lib/handlers/sdp/unifiedPlanUtils';
+import ortc from 'mediasoup-client/ortc';
+import sdpCommonUtils from 'mediasoup-client/handlers/sdp/commonUtils';
+import sdpUnifiedPlanUtils from 'mediasoup-client/handlers/sdp/unifiedPlanUtils';
 
 import { eq } from 'drizzle-orm';
 import { db } from 'videmus-database/db';
@@ -126,7 +126,8 @@ app.post('/whip/:id', async (req, res) => {
     });
     const extendedRtpCapabilities = ortc.getExtendedRtpCapabilities(
       rtpCapabilities, 
-      router.rtpCapabilities
+      router.rtpCapabilities,
+      true,
     );
     const sendingRtpParametersByKind: Record<
       'audio' | 'video', 
@@ -213,7 +214,6 @@ app.post('/whip/:id', async (req, res) => {
         offerRtpParameters: sendingRtpParameters,
         answerRtpParameters: sendingRemoteRtpParameters,
         codecOptions: {},
-        extmapAllowMixed: true
       });
 
       const producer = await broadcasterTransport.produce({

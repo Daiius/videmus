@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.12",
-    "debug": "^4.3.7",
-    "drizzle-orm": "^0.35.3",
-    "express": "^4.21.1",
-    "mediasoup": "^3.14.15",
-    "mediasoup-client": "^3.7.17",
-    "mysql2": "^3.11.3",
-    "nanoid": "^5.0.7",
-    "sdp-transform": "^2.14.2",
+    "debug": "^4.4.1",
+    "drizzle-orm": "^0.44.2",
+    "express": "^5.1.0",
+    "mediasoup": "^3.16.3",
+    "mediasoup-client": "^3.12.2",
+    "mysql2": "^3.14.1",
+    "nanoid": "^5.1.5",
+    "sdp-transform": "^2.15.0",
     "videmus-database": "workspace:*"
   },
   "devDependencies": {
