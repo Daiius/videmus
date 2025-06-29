@@ -2,6 +2,8 @@ services:
   videmus-nextjs:
     image: daiius/private-registry:videmus-nextjs
     container_name: videmus-nextjs
+    volumes: !reset
   videmus-webrtc:
     image: daiius/private-registry:videmus-webrtc
+    volumes: !reset
 

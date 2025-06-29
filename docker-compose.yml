@@ -3,7 +3,7 @@ services:
     build:
       dockerfile: ./next/Dockerfile.nextjs
     container_name: videmus-nextjs-dev
-    working_dir: '/workspace/app'
+    working_dir: /workspace/next
     environment:
       TZ: 'Asia/Tokyo'
     env_file:
@@ -20,7 +20,7 @@ services:
     build:
       dockerfile: ./webrtc/Dockerfile.webrtc
     container_name: videmus-webrtc
-    working_dir: /workspace/app
+    working_dir: /workspace/webrtc
     env_file:
       - .env.webrtc
       - .env.database-by-ip

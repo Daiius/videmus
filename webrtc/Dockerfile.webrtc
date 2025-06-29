@@ -1,6 +1,14 @@
 FROM node:20
 
+WORKDIR /workspace/app
+
 RUN npm install -g pnpm
 
-CMD ["pnpm", "tsx", "server.ts"]
+
+# 本当はコンテナ内でしたいが、モノレポ構成だと厳しいかも
+# (workspaceやsymbolic linkになったパッケージを参照できるか？)
+#COPY package.json .
+#RUN pnpm install
+
+CMD ["pnpm", "dev"]
 
