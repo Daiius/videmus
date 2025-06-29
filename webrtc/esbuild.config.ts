@@ -1,7 +1,7 @@
 import { build } from 'esbuild'
 
 await build({
-  entryPoints: ['./server.ts'],
+  entryPoints: ['./src/server.ts'],
   outfile: './dist/server.js',
   platform: 'node',
   format: 'esm',
