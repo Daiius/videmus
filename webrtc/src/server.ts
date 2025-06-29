@@ -60,6 +60,9 @@ app.use((req, res, next) => {
   next();
 });
 
+/**
+ * mediasoupのワーカプロセスを起動します
+ */
 const worker: Worker = await createWorker({
   logLevel: 'warn',
   logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
@@ -73,10 +76,21 @@ const resourcesDict: ResourcesDict = {};
 /**
  * for OBS WHIP protocol
  * 
+ * WHIPプロトコル選択+適切なURL指定の上で、
+ * OBSの配信開始ボタンを押すと最初にここにリクエストが来ます
+ * bodyにSDP offer、動画や音声のフォーマットや品質の情報の提案が
+ * クライアント側から行われます（クライアント側の対応に合わせた内容であるはずです）
  *
+ * サーバ側はこのオファー内容に対応できるか、出来るならどんなSDPを返すべきか決定し、
+ * レスポンスに決定内容を含めて応答します
+ *
+ * また、送信者のIDの有効/無効の確認、配信IDをキーとしてのリソース生成と
+ * メモリ中への記録を行い、配信に必要なリソースを、配信が終了されるまで保持します
  */
 app.post('/whip/:id', async (req, res) => {
   try {
+    // resourceIdは配信者のIDを指しますが、
+    // これで各種リソースを管理しますので、resourceIdとしています
     const resourcesId = req.params.id;
 
     const searchedEntries = await db.select()
@@ -103,6 +117,8 @@ app.post('/whip/:id', async (req, res) => {
     }
 
     debug(`/whip/${resourcesId} post access`);
+
+    // リソース初期化開始
     resourcesDict[resourcesId] = {
       router: await worker.createRouter({ mediaCodecs }),
       streamId: currentChannelId, // 視聴用IDを別に与える
@@ -117,6 +133,7 @@ app.post('/whip/:id', async (req, res) => {
     const router = resources.router;
     const broadcasterResources = resources.broadcasterResources;
 
+    // クライアントから送信されてきたSDP offerを読み取り、SDP answerを構成します
     const localSdpObject = sdpTransform.parse(req.body.toString());
     const rtpCapabilities = sdpCommonUtils.extractRtpCapabilities({
       sdpObject: localSdpObject
@@ -157,7 +174,7 @@ app.post('/whip/:id', async (req, res) => {
     };
    
     // 既存のtransportが存在していたとしても再利用せず、 
-    // 毎回作り直してみる
+    // 毎回作り直してみます
     const broadcasterTransport = await createWebRtcTransport(router);
     broadcasterResources.broadcasterTransport = broadcasterTransport;
 
@@ -168,6 +185,8 @@ app.post('/whip/:id', async (req, res) => {
       )
     );
 
+    // ここでSDP answerの内容が決まり、以下リソースを生成しつつ
+    // このSDP answerの返答準備を行います
     const remoteSdp = new RemoteSdp({
       iceParameters: broadcasterTransport.iceParameters,
       iceCandidates: broadcasterTransport.iceCandidates,
@@ -178,9 +197,15 @@ app.post('/whip/:id', async (req, res) => {
       sctpParameters: broadcasterTransport.sctpParameters,
     });
     
+    // 配信者用transportで、配信者からの接続を待機します
     await broadcasterTransport.connect({ dtlsParameters });
 
 
+    // SDP answer内容に合うように配信者側リソースを作成しつつ、
+    // クライアント側に返答するSDP answer内容を準備します
+    //
+    // 仮に音声や映像の片方だけしか対応していなくても、
+    // 対応している方だけは生成させる......つもりです
     for (const { type, mid } of localSdpObject.media) {
 
       debug('type, mid: ', { type, mid });
@@ -232,6 +257,12 @@ app.post('/whip/:id', async (req, res) => {
     const answer = remoteSdp.getSdp();
     debug('answer: ', answer);
 
+    // SDP answerを返します
+    // ヘッダーには配信開始URLが含まれ、ここにアクセスすると
+    // 配信リソースを用いた動作が開始されます
+    //
+    // 別にここで返さず固定でも良いのですが、配信開始用URLを
+    // 動的に生成したいという場合にも対応出来る様になっていそうです:
     res
       .type('application/sdp')
       .appendHeader(
@@ -246,6 +277,15 @@ app.post('/whip/:id', async (req, res) => {
   }
 });
 
+/**
+ * 配信停止用のAPIエンドポイントです
+ *
+ * OBSの配信停止ボタンを押すとここが呼ばれます
+ * 配信開始直後のエラー時などでもOBSはこのエンドポイントを呼び出します
+ *
+ * リソース解放についてはこちらを参照
+ * https://mediasoup.org/documentation/v3/mediasoup/garbage-collection/
+ */
 app.delete('/whip/test-broadcast/:id', async (req, res) => {
   try {
     const resourcesId = req.params.id;
@@ -292,6 +332,10 @@ app.delete('/whip/test-broadcast/:id', async (req, res) => {
   }
 });
 
+/**
+ * 配信の状況（開始・停止）と視聴者数の目安を返します
+ * 配信者IDを引数にとる、つまり配信者向けのAPIエンドポイントです
+ */
 app.get('/broadcasting-status/:broadcastId', async (req, res) => {
   const broadcastId = req.params.broadcastId;
 
@@ -335,6 +379,13 @@ app.get('/broadcasting-status/:broadcastId', async (req, res) => {
   });
 });
 
+/**
+ * 配信の状況（開始・停止）と視聴者数の目安を返します
+ * 視聴IDを引数にとる、つまり視聴者向けのAPIエンドポイントです
+ * TODO
+ * 視聴者向けの方が呼び出される回数が多いのに、
+ * resourcesDictをO(n)で探索するアルゴリズムで良いのか......?
+ */
 app.get('/streaming-status/:channelId', async (req, res) => {
   try {
     const channelId = req.params.channelId;
@@ -359,6 +410,11 @@ app.get('/streaming-status/:channelId', async (req, res) => {
   }
 });
 
+/**
+ * 配信IDに関連付けられている配信チャンネルを変更します
+ * TODO
+ * 配信前は変更できない？あまり直感的ではないかも
+ */
 app.post('/current-channel/:broadcastId', async (req, res) => {
   const broadcastId = req.params.broadcastId;
   const broadcastInfos = await db.select()
@@ -381,6 +437,11 @@ app.post('/current-channel/:broadcastId', async (req, res) => {
   res.status(200).send('success: current channel modified');
 });
 
+/**
+ * 視聴者とやりとりするためのAPIエンドポイントの一つ
+ * 視聴者側（ブラウザ側で動作するmediasoup-client）に、
+ * サーバ側のmediasoup routerの、多分音声や動画のフォーマットを伝えます
+ */
 app.get('/mediasoup/router-rtp-capabilities/:id', async (req, res) => {
   try {
     const streamId = req.params.id;
@@ -399,6 +460,14 @@ app.get('/mediasoup/router-rtp-capabilities/:id', async (req, res) => {
   }
 });
 
+/**
+ * 視聴者とやりとりするためのAPIエンドポイントの一つ
+ * サーバ側で視聴者用transportを生成し、
+ * クライアント（視聴者ブラウザで動作するmediasoup-client transport）を接続するための
+ * パラメータ通知を行います、多分ポート番号とか？
+ *
+ * クライアント側ではこの結果を元にtransportを生成しています:
+ */
 app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
   try {
     const streamId = req.params.id;
@@ -416,6 +485,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
     // TODO : streamerの人数制限はここで行う
     const streamerTransport = await createWebRtcTransport(router);
 
+    // 視聴者用のtransport接続状態がdisconnectedになったらリソースを解放する
     streamerTransport.on('icestatechange', (state: IceState) => {
       debug(`streamerTransport (${streamerTransport.id}) ice stage changed to ${state}`);
       if (state === 'disconnected') {
@@ -454,6 +524,12 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
   }
 });
 
+/**
+ * 視聴者とやりとりするためのAPIエンドポイントの一つ
+ * クライアント側でtransportが生成され、接続の準備が整った段階で呼ばれます
+ * 視聴用IDと、事前にクライアント側に伝えられていたtransportIdを用いて
+ * サーバ側とクライアント側のtransportを接続します
+ */
 app.post('/mediasoup/client-connect/:streamId/:transportId', async (req, res) => {
   try {
     const streamId = req.params.streamId;
@@ -489,6 +565,13 @@ app.post('/mediasoup/client-connect/:streamId/:transportId', async (req, res) =>
   }
 });
 
+/**
+ * 視聴者とやりとりするためのAPIエンドポイントの一つ
+ * サーバ側とクライアント側のtransportが接続された後、
+ * 互換性のあるproducerとconsumerのセットを生成するために用いられれます
+ * クライアント側の動画や音声のフォーマット対応についての情報が送られてくるので、
+ * それがサーバ側のproducerと対応しており、consumerを生成できるなら、生成します
+ */
 app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, res) => {
   try {
     const clientCapabilities = req.body;
@@ -558,6 +641,12 @@ app.post('/mediasoup/consumer-parameters/:streamId/:transportId', async (req, re
   }
 });
 
+/**
+ * 視聴者とやりとりするためのAPIエンドポイントの一つ
+ * サーバ側とクライアント側のcapabilities情報を交換して（それまでの手続きが色々ありますが）
+ * 生成されたサーバ側のconsumerはpaused状態なので、
+ * クライアント側で再生準備が整うとこのAPIエンドポイントが呼ばれ、ストリーム送信が開始されます
+ */
 app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) => {
   try {
     const streamId = req.params.streamId;
