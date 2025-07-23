@@ -19,6 +19,9 @@ COPY ./next /workspace/next
 # Next.js の standalone output 機能を使用する
 ARG NEXT_PUBLIC_HOST_URL
 ENV NEXT_PUBLIC_HOST_URL=$NEXT_PUBLIC_HOST_URL
+
+RUN if [ -z "$NEXT_PUBLIC_HOST_URL" ]; then echo "--build-arg NEXT_PUBLIC_HOST_URL= is required!"; exit 1; fi
+
 RUN pnpm next build
 
 # Package install layer
