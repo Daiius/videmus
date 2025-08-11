@@ -2,7 +2,8 @@ import {
   WebRtcTransport,
   Router,
   Producer,
-  Consumer
+  Consumer,
+  WebRtcServer
 } from 'mediasoup/types';
 
 /** 配信者用のmediasoup resources */
@@ -61,12 +62,14 @@ export type ResourcesDict = Record<string, Resources>;
  * routerに関連付けられたtransportは何度も生成するタイミングがあります
  */
 export const createWebRtcTransport = async (
-  router: Router
+  router: Router,
+  webRtcServer: WebRtcServer,
 ): Promise<WebRtcTransport> => {
   const transport: WebRtcTransport = await router.createWebRtcTransport({
-    listenIps: [
-      { ip: '0.0.0.0', announcedIp: process.env.ANNOUNCED_IP},
-    ],
+    //listenIps: [
+    //  { ip: '0.0.0.0', announcedIp: process.env.ANNOUNCED_IP},
+    //],
+    webRtcServer,
     enableUdp: true,
     enableTcp: true,
     preferUdp: true,

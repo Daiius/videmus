@@ -9,6 +9,7 @@ import {
   RtpParameters,
   MediaKind,
   IceState,
+  WebRtcServer,
 } from 'mediasoup/types';
 
 import { mediaCodecs } from './codecs';
@@ -66,10 +67,27 @@ app.use((req, res, next) => {
 const worker: Worker = await createWorker({
   logLevel: 'warn',
   logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
-  rtcMinPort: 50000,
-  rtcMaxPort: 50100,
+  //rtcMinPort: 50000,
+  //rtcMaxPort: 50100,
 });
 debug('Worker created');
+
+const webRtcServer: WebRtcServer = await worker.createWebRtcServer({
+  listenInfos: [
+    {
+      protocol: 'udp',
+      ip: '0.0.0.0',
+      announcedIp: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+    {
+      protocol: 'tcp',
+      ip: '0.0.0.0',
+      announcedIp: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+  ],
+})
 
 const resourcesDict: ResourcesDict = {};
 
@@ -175,7 +193,7 @@ app.post('/whip/:id', async (req, res) => {
    
     // 既存のtransportが存在していたとしても再利用せず、 
     // 毎回作り直してみます
-    const broadcasterTransport = await createWebRtcTransport(router);
+    const broadcasterTransport = await createWebRtcTransport(router, webRtcServer);
     broadcasterResources.broadcasterTransport = broadcasterTransport;
 
     broadcasterTransport.observer.on(
@@ -483,7 +501,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
     const streamerResources = resources.streamerResources;
 
     // TODO : streamerの人数制限はここで行う
-    const streamerTransport = await createWebRtcTransport(router);
+    const streamerTransport = await createWebRtcTransport(router, webRtcServer);
 
     // 視聴者用のtransport接続状態がdisconnectedになったらリソースを解放する
     streamerTransport.on('icestatechange', (state: IceState) => {
