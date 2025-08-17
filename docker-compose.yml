@@ -11,8 +11,9 @@ services:
       - .env.database
     volumes:
       - ./database:/workspace/database
-      - ./node_modules:/workspace/node_modules
-      - ./next:/workspace/app
+      - /workspace/database/node_modules
+      - ./next:/workspace/next
+      - /workspace/next/node_modules
     tmpfs:
       - /workspace/app/.next
 
@@ -20,7 +21,7 @@ services:
     build:
       dockerfile: ./webrtc/Dockerfile.webrtc
     container_name: videmus-webrtc
-    working_dir: /workspace/webrtc
+    working_dir: /workspace/app
     env_file:
       - .env.webrtc
       - .env.database
@@ -30,9 +31,10 @@ services:
     ports:
       - 44400:44400/udp
     volumes:
-      - ./node_modules:/workspace/node_modules
-      - ./webrtc:/workspace/app
       - ./database:/workspace/database
+      - /workspace/database/node_modules
+      - ./webrtc:/workspace/app
+      - /workspace/app/node_modules
     depends_on:
       database-preparation:
         condition: service_completed_successfully 
@@ -70,24 +72,24 @@ services:
       start_period: 5s
 
   database-preparation:
-    image: node:20-slim
+    build:
+      dockerfile: database/Dockerfile.database-preparation
     container_name: videmus-database-preparation
-    working_dir: /workspace/app
+    working_dir: /workspace/database
     env_file:
       - .env.database
     volumes:
-      - ./node_modules:/workspace/node_modules
-      - ./database:/workspace/app
+      - ./database:/workspace/database
+      - /workspace/database/node_modules
     command: >
       bash -c '
-        npm install -g pnpm \
-        && pnpm drizzle-kit push \
+        pnpm drizzle-kit push \
              --dialect mysql \
              --schema=./db/schema.ts \
              --host=$$DB_HOST \
              --user=$$MYSQL_USER \
              --password=$$MYSQL_PASSWORD \
-             --database=$$MYSQL_DATABASE; \
+             --database=$$MYSQL_DATABASE && \
         pnpm tsx addTestData.ts
       '
     depends_on:
