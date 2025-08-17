@@ -2,7 +2,6 @@ import {
   mysqlTable, 
   varchar,
   boolean,
-  primaryKey,
   timestamp,
 } from 'drizzle-orm/mysql-core';
 
@@ -37,10 +36,15 @@ export const broadcastIds = mysqlTable('BroadcastIds', {
 export const channels = mysqlTable('Channels', {
   id:
     varchar('id', { length: 21 })
-      .notNull(),
+      .notNull()
+      .primaryKey(),
   broadcastId:
     varchar('broadcast_id', { length: 36 })
-      .notNull(),
+      .notNull()
+      .references(() => broadcastIds.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
   name:
     varchar('name', { length: 256 })
       .notNull()
@@ -53,9 +57,5 @@ export const channels = mysqlTable('Channels', {
     timestamp('created_time', { mode: 'date' })
       .notNull()
       .defaultNow(),
-}, (table) => [
-    primaryKey({
-      columns: [table.id, table.broadcastId]
-    }), 
-]);
+});
 
