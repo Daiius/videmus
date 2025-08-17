@@ -32,6 +32,7 @@ import { broadcastIds } from 'videmus-database/db/schema';
 
 const test = await db.select().from(broadcastIds);
 debug(test);
+debug(process.env)
 
 const app = express();
 app.use(express.json());
@@ -67,27 +68,30 @@ app.use((req, res, next) => {
 const worker: Worker = await createWorker({
   logLevel: 'warn',
   logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
-  //rtcMinPort: 50000,
-  //rtcMaxPort: 50100,
+  rtcMinPort: 44400,
+  rtcMaxPort: 44410,
 });
 debug('Worker created');
 
-const webRtcServer: WebRtcServer = await worker.createWebRtcServer({
+const webRtcServer: WebRtcServer | undefined = //undefined
+await worker.createWebRtcServer({
   listenInfos: [
     {
       protocol: 'udp',
       ip: '0.0.0.0',
-      announcedIp: process.env.ANNOUNCED_IP,
+      announcedAddress: process.env.ANNOUNCED_IP,
       port: Number(process.env.WEBRTC_PORT ?? 44400),
     },
     {
       protocol: 'tcp',
       ip: '0.0.0.0',
-      announcedIp: process.env.ANNOUNCED_IP,
+      announcedAddress: process.env.ANNOUNCED_IP,
       port: Number(process.env.WEBRTC_PORT ?? 44400),
     },
   ],
 })
+
+//worker.appData.webRtcServer = webRtcServer;
 
 const resourcesDict: ResourcesDict = {};
 
@@ -695,9 +699,11 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
 });
 
 const httpServer = createServer(app);
+const port = Number(process.env.PORT ?? 4000)
+
 httpServer.listen(
-  4000,
-  () => console.log('videmus webrtc server started on port 3000'),
+  port,
+  () => console.log(`videmus webrtc server started on port ${port}`),
 );
 
 

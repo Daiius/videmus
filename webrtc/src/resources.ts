@@ -63,7 +63,7 @@ export type ResourcesDict = Record<string, Resources>;
  */
 export const createWebRtcTransport = async (
   router: Router,
-  webRtcServer: WebRtcServer,
+  webRtcServer?: WebRtcServer,
 ): Promise<WebRtcTransport> => {
   const transport: WebRtcTransport = await router.createWebRtcTransport({
     //listenIps: [

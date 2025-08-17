@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-WORKDIR /workspace/app
+WORKDIR /workspace/webrtc
 
 RUN npm install -g pnpm
 
@@ -9,7 +9,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 # monorepo database
 COPY database/package.json /workspace/database/
 # monorepo nextjs
-COPY webrtc/package.json webrtc/tsconfig.json /workspace/app/
+COPY webrtc/package.json webrtc/tsconfig.json /workspace/webrtc/
 
 RUN pnpm install
 

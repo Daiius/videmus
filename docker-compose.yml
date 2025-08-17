@@ -16,6 +16,7 @@ services:
       - /workspace/database/node_modules
       - ./next:/workspace/next
       - /workspace/next/node_modules
+      - /workspace/node_modules
     tmpfs:
       - /workspace/app/.next
 
@@ -23,7 +24,7 @@ services:
     build:
       dockerfile: ./webrtc/Dockerfile.webrtc
     container_name: videmus-webrtc
-    working_dir: /workspace/app
+    working_dir: /workspace/webrtc
     env_file:
       - .env.webrtc
       - .env.database
@@ -32,12 +33,15 @@ services:
       TZ: 'Asia/Tokyo'
     ports:
       - 44400:44400/udp
+      - 44400:44400/tcp
       - 4000:4000
+      - "50000-50010:50000-50010/udp"
     volumes:
       - ./database:/workspace/database
       - /workspace/database/node_modules
-      - ./webrtc:/workspace/app
-      - /workspace/app/node_modules
+      - ./webrtc:/workspace/webrtc
+      - /workspace/webrtc/node_modules
+      - /workspace/node_modules
     depends_on:
       database-preparation:
         condition: service_completed_successfully 
@@ -71,6 +75,7 @@ services:
     volumes:
       - ./database:/workspace/database
       - /workspace/database/node_modules
+      - /workspace/node_modules
     command: >
       bash -c '
         pnpm drizzle-kit push \
