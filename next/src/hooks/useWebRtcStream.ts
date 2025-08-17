@@ -22,13 +22,13 @@ export const useWebRtcStreams = ({
   React.useEffect(() => {
     (async () => {
       const routerRtpCapabilitiesResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/mediasoup/router-rtp-capabilities/${streamId}`
+        `${process.env.NEXT_PUBLIC_API_URL}/mediasoup/router-rtp-capabilities/${streamId}`
       );
       const routerRtpCapabilities = await routerRtpCapabilitiesResponse.json();
       console.log('routerRtpCapabilities: %o', routerRtpCapabilities);
       await device.load({ routerRtpCapabilities });
       const transportParametersResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/mediasoup/streamer-transport-parameters/${streamId}`
+        `${process.env.NEXT_PUBLIC_API_URL}/mediasoup/streamer-transport-parameters/${streamId}`
       );
       const transportParameters = await transportParametersResponse.json();
       console.log('transportParmaeters: %o', transportParameters);
@@ -40,7 +40,7 @@ export const useWebRtcStreams = ({
           console.log('transport connect');
           try {
             await fetch(
-              `${process.env.NEXT_PUBLIC_HOST_URL}/api/mediasoup/client-connect/${streamId}/${transport.id}`, {
+              `${process.env.NEXT_PUBLIC_API_URL}/mediasoup/client-connect/${streamId}/${transport.id}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(dtlsParameters),
@@ -60,7 +60,7 @@ export const useWebRtcStreams = ({
       });
 
       const consumerParametersResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/mediasoup/consumer-parameters/${streamId}/${transport.id}`, {
+        `${process.env.NEXT_PUBLIC_API_URL}/mediasoup/consumer-parameters/${streamId}/${transport.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(device.rtpCapabilities),

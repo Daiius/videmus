@@ -285,7 +285,7 @@ app.post('/whip/:id', async (req, res) => {
       .type('application/sdp')
       .appendHeader(
         'Location', 
-        `${process.env.HOST_URL}/api/whip/test-broadcast/${resourcesId}`
+        `${process.env.API_URL}/whip/test-broadcast/${resourcesId}`
       )
       .status(201)
       .send(answer.toString());
@@ -696,7 +696,7 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
 
 const httpServer = createServer(app);
 httpServer.listen(
-  3000,
+  4000,
   () => console.log('videmus webrtc server started on port 3000'),
 );
 

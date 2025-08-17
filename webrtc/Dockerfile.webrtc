@@ -11,6 +11,8 @@ COPY database/package.json /workspace/database/
 # monorepo nextjs
 COPY webrtc/package.json webrtc/tsconfig.json /workspace/app/
 
+RUN pnpm install
+
 
 CMD ["pnpm", "dev"]
 

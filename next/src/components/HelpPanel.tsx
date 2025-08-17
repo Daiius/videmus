@@ -20,13 +20,13 @@ const HelpPanel: React.FC<
   >
     <div className='flex flex-col gap-2 items-center'>
       <Image 
-        src={`/videmus/obs-settings-00.png`}
+        src={`${process.env.NEXT_PUBLIC_HOST_URL}/obs-settings-00.png`}
         alt='OBS設定説明画像1'
         width={1054}
         height={815}
       />
       <Image 
-        src={`/videmus/obs-settings-01.png`} 
+        src={`${process.env.NEXT_PUBLIC_HOST_URL}/obs-settings-01.png`} 
         alt='OBS設定説明画像2'
         width={1054}
         height={815}

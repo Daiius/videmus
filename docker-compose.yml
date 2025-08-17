@@ -9,6 +9,8 @@ services:
     env_file:
       - .env.next
       - .env.database
+    ports:
+      - 3000:3000
     volumes:
       - ./database:/workspace/database
       - /workspace/database/node_modules
@@ -30,24 +32,12 @@ services:
       TZ: 'Asia/Tokyo'
     ports:
       - 44400:44400/udp
+      - 4000:4000
     volumes:
       - ./database:/workspace/database
       - /workspace/database/node_modules
       - ./webrtc:/workspace/app
       - /workspace/app/node_modules
-    depends_on:
-      database-preparation:
-        condition: service_completed_successfully 
-
-  webserver:
-    image: nginx
-    container_name: videmus-webserver
-    ports:
-      - 80:80
-    environment:
-      TZ: 'Asia/Tokyo'
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       database-preparation:
         condition: service_completed_successfully 

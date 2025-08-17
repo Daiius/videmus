@@ -34,7 +34,7 @@ const SelectCurrentChannelButton: React.FC<
         // 配信中ならリソースのチャンネルIDも書き換え
         // (配信前なら202ステータス)
         await fetch(
-          ` ${process.env.NEXT_PUBLIC_HOST_URL}/api/current-channel/${broadcastId}`, {
+          ` ${process.env.NEXT_PUBLIC_API_URL}/api/current-channel/${broadcastId}`, {
             method: 'POST',
             body: JSON.stringify({ channelId, }),
         });

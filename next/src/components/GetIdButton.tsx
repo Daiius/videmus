@@ -21,7 +21,7 @@ const GetIdButton: React.FC<
     React.useState<string|undefined>();
   const [id, setId] = React.useState<string|undefined>();
 
-  const obsUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/api/whip/${id}`;
+  const obsUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${id}`;
   const [isObsUrlCopied, setIsObsUrlCopied] = React.useState<boolean>(false);
 
   const streamUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/stream/${id}`;
@@ -29,7 +29,7 @@ const GetIdButton: React.FC<
 
   const handleClick = async () => {
     const response = await fetch(
-      `/videmus/api/id`, {
+      `${process.env.NEXT_PUBLIC_API_URL}/id`, {
       method: 'POST',
     });
     if (response.ok) {

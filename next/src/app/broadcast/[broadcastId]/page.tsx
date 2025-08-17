@@ -34,7 +34,7 @@ const BroadcasterPage: React.FC<{
   }
 
   const { isAvailable, channels, currentChannelId } = broadcastInfo;
-  const obsBroadcastUrl = `${process.env.HOST_URL}/api/whip/${broadcastId}`;
+  const obsBroadcastUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${broadcastId}`;
 
   return (
     <div className={clsx(
