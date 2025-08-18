@@ -19,7 +19,7 @@ export const createWebRtcStreams = async (
   onFailed?: () => void,
 ): Promise<Consumer[]> => {
 
-  const baseUrl = `${process.env.NEXT_PUBLIC_HOST_URL}${process.env.NEXT_PUBLIC_WITHOUT_API ? '' : '/api'}`;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   // サーバ側の動画・音声フォーマット対応状況など取得します
   const routerRtpCapabilitiesResponse = await fetch(

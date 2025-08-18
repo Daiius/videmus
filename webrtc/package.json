@@ -4,12 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsx esbuild.config.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@types/debug": "^4.1.12",
     "debug": "^4.4.1",
     "drizzle-orm": "^0.44.2",
     "express": "^5.1.0",
@@ -21,6 +20,7 @@
     "videmus-database": "workspace:*"
   },
   "devDependencies": {
+    "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.7",
     "@types/sdp-transform": "^2.4.10",

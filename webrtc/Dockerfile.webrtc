@@ -1,14 +1,18 @@
-FROM node:20
+FROM node:20-slim
 
-WORKDIR /workspace/app
+WORKDIR /workspace/webrtc
 
 RUN npm install -g pnpm
 
+# monorepo root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+# monorepo database
+COPY database/package.json /workspace/database/
+# monorepo nextjs
+COPY webrtc/package.json webrtc/tsconfig.json /workspace/webrtc/
 
-# 本当はコンテナ内でしたいが、モノレポ構成だと厳しいかも
-# (workspaceやsymbolic linkになったパッケージを参照できるか？)
-#COPY package.json .
-#RUN pnpm install
+RUN pnpm install
+
 
 CMD ["pnpm", "dev"]
 

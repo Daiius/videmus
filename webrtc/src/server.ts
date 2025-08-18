@@ -9,6 +9,7 @@ import {
   RtpParameters,
   MediaKind,
   IceState,
+  WebRtcServer,
 } from 'mediasoup/types';
 
 import { mediaCodecs } from './codecs';
@@ -31,6 +32,7 @@ import { broadcastIds } from 'videmus-database/db/schema';
 
 const test = await db.select().from(broadcastIds);
 debug(test);
+debug(process.env)
 
 const app = express();
 app.use(express.json());
@@ -66,10 +68,30 @@ app.use((req, res, next) => {
 const worker: Worker = await createWorker({
   logLevel: 'warn',
   logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
-  rtcMinPort: 50000,
-  rtcMaxPort: 50100,
+  rtcMinPort: 44400,
+  rtcMaxPort: 44410,
 });
 debug('Worker created');
+
+const webRtcServer: WebRtcServer | undefined = //undefined
+await worker.createWebRtcServer({
+  listenInfos: [
+    {
+      protocol: 'udp',
+      ip: '0.0.0.0',
+      announcedAddress: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+    {
+      protocol: 'tcp',
+      ip: '0.0.0.0',
+      announcedAddress: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+  ],
+})
+
+//worker.appData.webRtcServer = webRtcServer;
 
 const resourcesDict: ResourcesDict = {};
 
@@ -175,7 +197,7 @@ app.post('/whip/:id', async (req, res) => {
    
     // 既存のtransportが存在していたとしても再利用せず、 
     // 毎回作り直してみます
-    const broadcasterTransport = await createWebRtcTransport(router);
+    const broadcasterTransport = await createWebRtcTransport(router, webRtcServer);
     broadcasterResources.broadcasterTransport = broadcasterTransport;
 
     broadcasterTransport.observer.on(
@@ -267,7 +289,7 @@ app.post('/whip/:id', async (req, res) => {
       .type('application/sdp')
       .appendHeader(
         'Location', 
-        `${process.env.HOST_URL}/api/whip/test-broadcast/${resourcesId}`
+        `${process.env.API_URL}/whip/test-broadcast/${resourcesId}`
       )
       .status(201)
       .send(answer.toString());
@@ -483,7 +505,7 @@ app.get('/mediasoup/streamer-transport-parameters/:id', async (req, res) => {
     const streamerResources = resources.streamerResources;
 
     // TODO : streamerの人数制限はここで行う
-    const streamerTransport = await createWebRtcTransport(router);
+    const streamerTransport = await createWebRtcTransport(router, webRtcServer);
 
     // 視聴者用のtransport接続状態がdisconnectedになったらリソースを解放する
     streamerTransport.on('icestatechange', (state: IceState) => {
@@ -677,9 +699,11 @@ app.post('/mediasoup/resume-consumer/:streamId/:transportId', async (req, res) =
 });
 
 const httpServer = createServer(app);
+const port = Number(process.env.PORT ?? 4000)
+
 httpServer.listen(
-  3000,
-  () => console.log('videmus webrtc server started on port 3000'),
+  port,
+  () => console.log(`videmus webrtc server started on port ${port}`),
 );
 
 

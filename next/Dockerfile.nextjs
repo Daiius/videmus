@@ -1,8 +1,17 @@
-FROM node:20
+FROM node:20-slim
 
-WORKDIR /workspace/app
+WORKDIR /workspace/next
 
 RUN npm install -g pnpm
+
+# monorepo root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+# monorepo database
+COPY database/package.json /workspace/database/
+# monorepo nextjs
+COPY next/package.json next/tsconfig.json /workspace/next/
+
+RUN pnpm install
 
 CMD ["pnpm", "run", "dev"]
 

@@ -36,7 +36,7 @@ const BroadcastingStatusPanel: React.FC<
     isBroadcasting: boolean;
   };
   const { data, error } = useSWR<BroadcastingStatus>(
-    `/videmus/api/broadcasting-status/${broadcastId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/broadcasting-status/${broadcastId}`,
     fetcher,
     { refreshInterval: 5_000 }
   );
