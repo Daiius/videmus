@@ -31,6 +31,8 @@ services:
     environment:
       DEBUG: "mediasoup*,videmus:webrtc*"
       TZ: 'Asia/Tokyo'
+      DTLS_CERT: ./dtls-cert.pem
+      DTLS_KEY: ./dtls-key.pem
     ports:
       - 44400:44400/udp
       - 44400:44400/tcp
@@ -42,6 +44,8 @@ services:
       - ./webrtc:/workspace/webrtc
       - /workspace/webrtc/node_modules
       - /workspace/node_modules
+      - ./webrtc/dtls-cert.pem:/workspace/webrtc/dtls-cert.pem
+      - ./webrtc/dtls-key.pem:/workspace/webrtc/dtls-key.pem
     depends_on:
       database-preparation:
         condition: service_completed_successfully 

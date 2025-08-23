@@ -32,7 +32,6 @@ import { broadcastIds } from 'videmus-database/db/schema';
 
 const test = await db.select().from(broadcastIds);
 debug(test);
-debug(process.env)
 
 const app = express();
 app.use(express.json());
@@ -70,11 +69,12 @@ const worker: Worker = await createWorker({
   logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
   rtcMinPort: 44400,
   rtcMaxPort: 44410,
+  dtlsCertificateFile: process.env.DTLS_CERT,
+  dtlsPrivateKeyFile: process.env.DTLS_KEY,
 });
 debug('Worker created');
 
-const webRtcServer: WebRtcServer | undefined = //undefined
-await worker.createWebRtcServer({
+const webRtcServer: WebRtcServer = await worker.createWebRtcServer({
   listenInfos: [
     {
       protocol: 'udp',
@@ -90,8 +90,6 @@ await worker.createWebRtcServer({
     },
   ],
 })
-
-//worker.appData.webRtcServer = webRtcServer;
 
 const resourcesDict: ResourcesDict = {};
 
