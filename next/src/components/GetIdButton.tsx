@@ -1,53 +1,52 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
+import { useState } from 'react'
+import clsx from 'clsx'
 
 import { 
   ClipboardDocumentIcon,
   ClipboardDocumentCheckIcon,
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/outline'
 
-import Button from '@/components/Button';
+import Button from '@/components/Button'
 
-const GetIdButton: React.FC<
-  React.ComponentProps<typeof Button>
-> = ({
+export type GetIdButtonProps = {
+  className?: string,
+}
+
+const GetIdButton = ({
   className,
-  ...props
-}) => {
+}: GetIdButtonProps) => {
 
-  const [errorMessage, setErrorMessage] = 
-    React.useState<string|undefined>();
-  const [id, setId] = React.useState<string|undefined>();
+  const [errorMessage, setErrorMessage] = useState<string|undefined>()
+  const [id, setId] = useState<string|undefined>()
 
-  const obsUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${id}`;
-  const [isObsUrlCopied, setIsObsUrlCopied] = React.useState<boolean>(false);
+  const obsUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${id}`
+  const [isObsUrlCopied, setIsObsUrlCopied] = useState<boolean>(false)
 
-  const streamUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/stream/${id}`;
-  const [isStreamUrlCopied, setIsStreamUrlCopied] = React.useState<boolean>(false);
+  const streamUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/stream/${id}`
+  const [isStreamUrlCopied, setIsStreamUrlCopied] = useState<boolean>(false)
 
   const handleClick = async () => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/id`, {
       method: 'POST',
-    });
+    })
     if (response.ok) {
-      const idInfo = await response.json();
-      setId(idInfo.id);
-      console.log(idInfo.id);
+      const idInfo = await response.json()
+      setId(idInfo.id)
+      console.log(idInfo.id)
     } else {
-      const errorMessage = await response.text();
-      setErrorMessage(errorMessage);
+      const errorMessage = await response.text()
+      setErrorMessage(errorMessage)
     }
-  };
+  }
 
   return (
     <>
       {id == null && errorMessage == null &&
         <Button
           className={clsx(className)}
-          {...props}
           onClick={handleClick}
         >
           配信IDの取得
@@ -98,8 +97,8 @@ const GetIdButton: React.FC<
         <div>エラー: {errorMessage}</div>
       }
     </>
-  );
-};
+  )
+}
 
-export default GetIdButton;
+export default GetIdButton
 

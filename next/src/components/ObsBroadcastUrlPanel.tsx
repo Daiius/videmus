@@ -4,8 +4,8 @@
 // HeadlessUIのダイアログはclient componentで動作するため、
 // 本コンポーネントもclient componentにします
 
-import React from 'react';
-import clsx from 'clsx';
+import clsx from 'clsx'
+import { useState } from 'react'
 
 import {
   Description,
@@ -13,31 +13,29 @@ import {
   DialogBackdrop,
   DialogPanel,
   DialogTitle
-} from '@headlessui/react';
+} from '@headlessui/react'
 
-import Panel from '@/components/Panel';
-import Button from '@/components/Button';
-import { ClipboardDocumentIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid';
+import Panel from '@/components/Panel'
+import Button from '@/components/Button'
+import { ClipboardDocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid'
 
+export type ObsBroadcastUrlPanel = {
+  obsBroadcastUrl: string,
+  className?: string,
+}
 
-const ObsBroadcastUrlPanel: React.FC<
-  React.ComponentProps<typeof Panel>
-  & {
-    obsBroadcastUrl: string;
-  }
-> = ({
+const ObsBroadcastUrlPanel = ({
   obsBroadcastUrl,
   className,
-  ...props
-}) => {
-  const [isOpen, setIsOpen] = React.useState<boolean>(false);
-  const [isCopied, setIsCopied] = React.useState<boolean>(false);
+}: ObsBroadcastUrlPanel) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
   return (
     <Panel
-      panelTitle='OBS配信用URL'
+      panelTitle={<div className='p-2'>OBS配信用URL</div>}
+      inline
       className={clsx(className)}
-      {...props}
     >
       <Button onClick={() => setIsOpen(true)}>
         表示
@@ -60,7 +58,7 @@ const ObsBroadcastUrlPanel: React.FC<
         >
           <DialogPanel
             className={clsx(
-              'max-w-lg space-y-4 bg-panel p-2 rounded-md'
+              'max-w-lg space-y-4 bg-panel p-4 rounded-md'
             )}
           >
             <DialogTitle className={clsx(

@@ -1,24 +1,30 @@
-import clsx from 'clsx';
 
-const Panel: React.FC<
-  React.ComponentProps<'div'>
-  & { panelTitle?: React.ReactNode; }
-> = ({
+import clsx from 'clsx'
+import { ReactNode } from 'react'
+
+export type PanelProps = {
+  panelTitle?: ReactNode,
+  inline?: boolean,
+  className?: string,
+  children: ReactNode,
+}
+
+const Panel = ({
   panelTitle,
+  inline,
   children,
   className,
-  ...props
-}) => (
+}: PanelProps) => (
   <div 
     className={clsx(
-      'bg-panel p-2 rounded-sm',
+      'bg-panel rounded-sm',
+      inline && 'flex flex-row items-center gap-4', 
       className,
     )}
-    {...props}
   >
     {panelTitle &&
       <div className={clsx(
-        'text-lg font-bold mb-2 -mt-2 -ml-1',
+        'text-lg font-bold', 
       )}>
         {panelTitle}
       </div>
