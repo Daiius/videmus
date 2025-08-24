@@ -1,40 +1,38 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
+import { useState, useEffect } from 'react'
+import clsx from 'clsx'
 
-import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
-import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid';
-import Button from '@/components/Button';
+import { ClipboardDocumentIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid'
+import Button from '@/components/Button'
 
-const StreamUrl: React.FC<
-  React.ComponentProps<'div'>
-  & {
-    streamUrl: string;
-    hideButton?: boolean;
-  }
-> = ({
+export type SteamUrlProps = {
+  streamUrl: string,
+  hideButton?: boolean,
+  className?: string,
+}
+
+const StreamUrl = ({
   streamUrl,
   hideButton,
   className,
-  ...props
-}) => {
-  const [isCopied, setIsCopied] = React.useState<boolean>(false);
-  React.useEffect(() => setIsCopied(false), [hideButton]);
+}: SteamUrlProps) => {
+  const [isCopied, setIsCopied] = useState<boolean>(false)
+  useEffect(() => setIsCopied(false), [hideButton])
   return (
     <div
       className={clsx(
         'flex flex-row gap-2 items-center',
         className,
       )}
-      {...props}
     >
-      <div>{streamUrl}</div>
+      <div className='overflow-ellipsis text-nowrap'>{streamUrl}</div>
       {!hideButton && 
         <Button
           onClick={async () => {
-            await navigator.clipboard.writeText(streamUrl);
-            setIsCopied(true);
+            await navigator.clipboard.writeText(streamUrl)
+            setIsCopied(true)
           }}
         >
           {isCopied
@@ -44,8 +42,8 @@ const StreamUrl: React.FC<
         </Button>
       }
     </div>
-  );
+  )
 }
 
-export default StreamUrl;
+export default StreamUrl
 

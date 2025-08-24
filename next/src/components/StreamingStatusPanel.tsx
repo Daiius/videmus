@@ -1,51 +1,44 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
-
-import useSWR from 'swr';
-
-import { UsersIcon } from '@heroicons/react/24/outline';
-
-import Panel from '@/components/Panel';
+import clsx from 'clsx'
+import useSWR from 'swr'
+import { UsersIcon } from '@heroicons/react/24/outline'
+import Panel from '@/components/Panel'
 
 const fetcher = async (url: string ) => {
-  const res = await fetch(url);
+  const res = await fetch(url)
   if (res.status === 202) {
-    return undefined;
+    return undefined
   }
   if (!res.ok) {
-    throw new Error('Failed to fetch data');
+    throw new Error('Failed to fetch data')
   }
-  return res.json();
+  return res.json()
 }
 
+export type StreamingStatusPanelProps = {
+  channelId: string,
+  className?: string,
+}
 
-const StreamingStatusPanel: React.FC<
-  React.ComponentProps<typeof Panel>
-  & {
-    channelId: string;
-  }
-> = ({
+const StreamingStatusPanel = ({
   channelId,
   className,
-  ...props
-}) => {
+}: StreamingStatusPanelProps) => {
   type BroadcastingStatus = {
-    streamingCount: number;
-    isBroadcasting: boolean;
-  };
+    streamingCount: number,
+    isBroadcasting: boolean,
+  }
   const { data, error } = useSWR<BroadcastingStatus>(
     `${process.env.NEXT_PUBLIC_API_URL}/streaming-status/${channelId}`,
     fetcher,
     { refreshInterval: 5_000 }
-  );
+  )
 
   return (
     <Panel
       panelTitle='配信ステータス'
       className={clsx(className)}
-      {...props}
     >
       <div className='flex flex-row gap-2 items-center'>
         <UsersIcon className='size-6' />
@@ -58,8 +51,8 @@ const StreamingStatusPanel: React.FC<
         <div>エラー： {error.toString()}</div>
       }
     </Panel>
-  );
-};
+  )
+}
 
-export default StreamingStatusPanel;
+export default StreamingStatusPanel
 

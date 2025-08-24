@@ -1,24 +1,23 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
+import clsx from 'clsx'
 
-import { useDebouncedCallback } from 'use-debounce';
+import { useDebouncedCallback } from 'use-debounce'
 
-import { Channel } from '@/lib/broadcastIds';
-import { updateChannel } from '@/actions/channelActions';
+import { Channel } from '@/lib/broadcastIds'
+import { updateChannel } from '@/actions/channelActions'
 
-import Input from '@/components/Input';
+import Input from '@/components/Input'
 
+export type ChannelNameInputProps = {
+  channel: Channel,
+  className?: string,
+}
 
-const ChannelNameInput: React.FC<
-  React.ComponentProps<typeof Input>
-  & { channel: Channel; }
-> = ({
+const ChannelNameInput = ({
   channel,
   className,
-  ...props
-})=> {
+}: ChannelNameInputProps)=> {
   const debouncedUpdateChannel = useDebouncedCallback(
     async (newName: string) => 
       await updateChannel(
@@ -27,7 +26,7 @@ const ChannelNameInput: React.FC<
         { name: newName }
       ),
     1_000,
-  );
+  )
 
   return (
     <Input 
@@ -36,10 +35,9 @@ const ChannelNameInput: React.FC<
       onChange={async (e) => 
         await debouncedUpdateChannel(e.target.value)
       }
-      {...props}
     />
-  );
+  )
 }
 
-export default ChannelNameInput;
+export default ChannelNameInput
 

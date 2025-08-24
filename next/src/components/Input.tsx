@@ -14,6 +14,7 @@ const Input: React.FC<
       'outline-none',
       'transition ease-in-out duration-300 hover:bg-panel',
       'focus:border-active focus:bg-panel',
+      'p-1',
       className,
     )}
     {...props}
