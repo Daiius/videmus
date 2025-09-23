@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono'
+import { cors } from 'hono/cors'
 
 import { postWhip } from './lib/postWhip'
 import { deleteWhip } from './lib/deleteWhip'
@@ -15,6 +16,12 @@ import {postMediasoupResumeConsumer} from './lib/postMediasoupResumeConsumer'
 
 
 export const app = new Hono()
+
+app.use('*', cors({
+  origin: 'http://localhost:3000',
+  allowMethods: ['GET', 'POST', 'DELETE'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}))
 
 const handleError = <C extends Context>(c: C, error: VidemusError) => {
   switch (error.type) {
@@ -54,7 +61,7 @@ const route =
         return handleError(c, result.error)
       }
 
-      c.header('application/json')
+      c.header('Content-Type', 'application/json')
       c.header('Location', result.data.url)
       return c.text(result.data.sdpAnswer, 201)
     },
