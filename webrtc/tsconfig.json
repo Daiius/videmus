@@ -17,7 +17,11 @@
     // このプロジェクトに合わせて修正
     "target": "esnext",   // top-level await を用いるため必要
     "skipLibCheck": true, // node_modules内のファイルはチェックしない
-    "noEmit": true        // tsx で実行するためファイル出力は無し
+    "noEmit": true,       // tsx で実行するためファイル出力は無し
+    
+    "strict": true,
+    "moduleResolution": "bundler",
+    "noUncheckedIndexedAccess": true
   }
 }
 

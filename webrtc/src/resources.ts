@@ -1,10 +1,15 @@
 import { 
+  Worker,
   WebRtcTransport,
   Router,
   Producer,
   Consumer,
   WebRtcServer
 } from 'mediasoup/types';
+
+import { createWorker } from 'mediasoup';
+
+import { debug, warn, error } from './logger';
 
 /** 配信者用のmediasoup resources */
 export type BroadcasterResources = {
@@ -47,6 +52,8 @@ export type Resources = {
   streamerResources: StreamerResources[];
 }
 
+export const resourcesDict: ResourcesDict = {};
+
 /**
  * 配信者IDをキーとして作成されるリソース管理用のオブジェクト
  * 
@@ -63,7 +70,7 @@ export type ResourcesDict = Record<string, Resources>;
  */
 export const createWebRtcTransport = async (
   router: Router,
-  webRtcServer?: WebRtcServer,
+  webRtcServer: WebRtcServer,
 ): Promise<WebRtcTransport> => {
   const transport: WebRtcTransport = await router.createWebRtcTransport({
     //listenIps: [
@@ -77,4 +84,35 @@ export const createWebRtcTransport = async (
   console.log('WebRTC Transport created: ', transport.id, process.env.ANNOUNCED_IP);
   return transport;
 }
+
+
+/**
+ * mediasoupのワーカプロセスを起動します
+ */
+export const worker: Worker = await createWorker({
+  logLevel: 'warn',
+  logTags: [ 'info', 'ice', 'dtls', 'rtp', 'rtcp' ],
+  rtcMinPort: 44400,
+  rtcMaxPort: 44410,
+  dtlsCertificateFile: process.env.DTLS_CERT,
+  dtlsPrivateKeyFile: process.env.DTLS_KEY,
+});
+debug('Worker created');
+
+export const webRtcServer: WebRtcServer = await worker.createWebRtcServer({
+  listenInfos: [
+    {
+      protocol: 'udp',
+      ip: '0.0.0.0',
+      announcedAddress: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+    {
+      protocol: 'tcp',
+      ip: '0.0.0.0',
+      announcedAddress: process.env.ANNOUNCED_IP,
+      port: Number(process.env.WEBRTC_PORT ?? 44400),
+    },
+  ],
+})
 

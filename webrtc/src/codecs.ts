@@ -1,4 +1,4 @@
-import { RtpCodecCapability } from 'mediasoup/node/lib/types';
+import { RtpCodecCapability } from 'mediasoup/types';
 
 export const mediaCodecs: RtpCodecCapability[] = [
   {
