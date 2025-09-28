@@ -1,61 +1,59 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
+import clsx from 'clsx'
 
+import { Channel } from '@/lib/broadcastIds'
 
-import { Channel } from '@/lib/broadcastIds';
+import Panel from '@/components/Panel'
+import ChannelNameInput from './ChannelNameInput'
+import SelectCurrentChannelButton from './SelectCurrentChannelButton'
+import DeleteChannelButton from './DeleteChannelButton'
+import StreamUrl from '@/components/StreamUrl'
 
-import Button from '@/components/Button';
-import Panel from '@/components/Panel';
-import ChannelNameInput from './ChannelNameInput';
-import SelectCurrentChannelButton from './SelectCurrentChannelButton';
-import DeleteChannelButton from './DeleteChannelButton';
-import StreamUrl from '@/components/StreamUrl';
+export type ChannelPanelProps = {
+  channel: Channel, 
+  currentChannelId: string,
+  canDelete: boolean,
+  className?: string,
+}
 
-const ChannelPanel: React.FC<
-  React.ComponentProps<typeof Panel>
-  & { 
-    channel: Channel; 
-    currentChannelId: string;
-    canDelete: boolean;
-  }
-> = ({
+const ChannelPanel = ({
   channel,
   currentChannelId,
   canDelete,
   className,
-  ...props
-}) => {
+}: ChannelPanelProps) => {
 
   const streamUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/stream/${channel.id}`
 
   return (
     <Panel 
       key={channel.id}
-      panelTitle={
-        <ChannelNameInput 
-          className='w-full'
-          channel={channel} 
-        />
-      }
       className={clsx(
         'bg-primary',
         channel.id === currentChannelId && 'border-2 border-success',
+        'flex flex-col',
+        'p-1',
         className,
       )}
-      {...props}
+      panelTitle={
+        <div className='flex flex-row gap-4'>
+          <ChannelNameInput className='w-full' channel={channel} />
+          {canDelete && 
+            <DeleteChannelButton
+              className='ms-auto'
+              broadcastId={channel.broadcastId}
+              channelId={channel.id}
+            />
+          }
+        </div>
+      }
     >
       <StreamUrl 
+        className='ml-2'
         streamUrl={streamUrl} 
         hideButton={channel.id !== currentChannelId}
       />
-      {canDelete && 
-        <DeleteChannelButton
-          broadcastId={channel.broadcastId}
-          channelId={channel.id}
-        />
-      }
       {channel.id !== currentChannelId &&
         <SelectCurrentChannelButton
           broadcastId={channel.broadcastId}
@@ -63,8 +61,8 @@ const ChannelPanel: React.FC<
         />
       }
     </Panel>
-  );
+  )
 }
 
-export default ChannelPanel;
+export default ChannelPanel
 

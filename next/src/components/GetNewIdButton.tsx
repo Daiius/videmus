@@ -1,36 +1,36 @@
 'use client'
 
-import React from 'react';
-import clsx from 'clsx';
+import clsx from 'clsx'
 
-import Button from '@/components/Button';
-import { createNewId } from '@/actions/idActions';
-import { useRouter } from 'next/navigation';
+import Button from '@/components/Button'
+import { createNewId } from '@/actions/idActions'
+import { useRouter } from 'next/navigation'
 
-const GetNewIdButton: React.FC<
-  React.ComponentProps<typeof Button>
-> = ({
+export type GetNewIdButtonProps = {
+  className?: string,
+}
+
+const GetNewIdButton = ({
   className,
-  ...props
-}) => {
-  const router = useRouter();
+}: GetNewIdButtonProps) => {
+  const router = useRouter()
+  const handleClick = async () => {
+    try {
+      const newId = await createNewId()
+      router.push(`/broadcast/${newId}`)
+    } catch (err) {
+      console.error(err)
+    }
+  }
   return (
     <Button
       className={clsx(className)}
-      onClick={async () => {
-        try {
-          const newId = await createNewId();
-          router.push(`/broadcast/${newId}`);
-        } catch (err) {
-          console.error(err);
-        }
-      }}
-      {...props}
+      onClick={handleClick}
     >
       新規配信IDを生成
     </Button>
   )
-};
+}
 
-export default GetNewIdButton;
+export default GetNewIdButton
 

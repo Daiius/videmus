@@ -5,22 +5,21 @@ import { XCircleIcon } from '@heroicons/react/24/outline';
 
 import Panel from '@/components/Panel';
 
-const BroadcastIdPanel: React.FC<
-  React.ComponentProps<typeof Panel>
-  & { 
-    broadcastId: string;
-    isAvailable: boolean;
-  }
-> = ({
+export type BroadcastIdPanelProps = {
+  broadcastId: string,
+  isAvailable: boolean,
+  className?: string,
+}
+
+const BroadcastIdPanel = ({
   broadcastId,
   isAvailable,
   className,
-  ...props
-}) => (
+}: BroadcastIdPanelProps) => (
   <Panel 
-    panelTitle='ID'
+    panelTitle={<div className='p-2'>ID</div>}
+    inline
     className={clsx(className)}
-    {...props}
   >
     <div className='flex flex-row gap-1 items-center'>
       <div>{broadcastId}</div>

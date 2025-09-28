@@ -16,7 +16,7 @@ const Button: React.FC<
       'hover:bg-primary-hover',
       'focus:outline focus:outline-primary-highlight',
       'active:outline active:outline-primary-highlight',
-      'p-2',
+      'px-2 py-1',
       className
     )}
     {...props}
