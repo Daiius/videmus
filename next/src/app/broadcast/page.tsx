@@ -10,8 +10,8 @@ const BroadcastPage: React.FC = () => (
     'lg:px-52 md:px-12',
   )}>
     <Panel 
-      className='w-full' 
-      title='最初の配信準備'
+      className='w-full p-2' 
+      panelTitle='最初の配信準備'
     >
       <div>
         配信IDはあなた専用です、管理者以外には教えないで下さい
@@ -19,7 +19,7 @@ const BroadcastPage: React.FC = () => (
       <div>
         その代わり、同じIDで何度でも配信できます！
       </div>
-      <GetNewIdButton />
+      <GetNewIdButton className="mt-4"/>
     </Panel>
   </div>
 );

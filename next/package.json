@@ -25,6 +25,7 @@
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0",
     "videmus-database": "workspace:*",
+    "videmus-webrtc": "workspace:*",
     "zod": "^3.25.67"
   },
   "devDependencies": {

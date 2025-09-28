@@ -1,4 +1,6 @@
 import { Hono, type Context } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod/v4'
 import { cors } from 'hono/cors'
 
 import { postWhip } from './lib/postWhip'
@@ -8,11 +10,14 @@ import { getStreamingStatus } from './lib/getStreamingStatus'
 import { postCurrentChannel } from './lib/postCurrentChannel'
 
 import type { VidemusError } from './types'
-import {getMediasoupRouterRtpCapabilities} from './lib/getMediasoupRouterRtpCapabilities'
-import {getMediasoupStreamerTransportParameters} from './lib/getMediasoupStreamerTransportParameters'
-import {postMediasoupClientConnect} from './lib/postMediasoupClientConnect'
-import {postMediasoupConsumerParameters} from './lib/postMediasoupConsumerParameters'
-import {postMediasoupResumeConsumer} from './lib/postMediasoupResumeConsumer'
+import { getMediasoupRouterRtpCapabilities } from './lib/getMediasoupRouterRtpCapabilities'
+import { getMediasoupStreamerTransportParameters } from './lib/getMediasoupStreamerTransportParameters'
+import { postMediasoupClientConnect } from './lib/postMediasoupClientConnect'
+import { postMediasoupConsumerParameters } from './lib/postMediasoupConsumerParameters'
+import { postMediasoupResumeConsumer } from './lib/postMediasoupResumeConsumer'
+import { postBroadcast } from './lib/postBroadcast'
+import { getBroadcastsById } from './lib/getBroadcastsById'
+import { postBroadcastsChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
 
 
 export const app = new Hono()
@@ -252,6 +257,55 @@ const route =
       }
 
       return c.text(result.data.message, 200)
+    },
+  )
+  /**
+   * 新しい配信IDを無効化状態で作成します
+   * 新しいチャンネルも1つデフォルト値で作成します
+   */
+  .post(
+    '/broadcasts',
+    async c => {
+      const result = await postBroadcast()
+      return c.json(result, 200)
+    },
+  )
+  /**
+   * 指定した配信IDの情報を取得します
+   * broadcastIdはURLに指定されたものを受け取るので、
+   * 存在しない値が入る場合をスムーズに扱うため、
+   * その場合undefinedを返します
+   *
+   * currentChannelIdはデータベース制約上はnullになる可能性がありますが
+   * (MySQLでdeferred constraintが使えないため妥協)
+   * この関数を経由して取得するようにし、
+   * TODO: どうやって強制する？？
+   * ここでnullチェックと有効な値のセットを事前に行うようにします
+   */
+  .get(
+    '/broadcasts/:broadcastId',
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const result = await getBroadcastsById({ broadcastId })
+
+      return c.json(result, 200)
+    },
+  )
+  /**
+   * 配信チャンネルを変更します
+   */
+  .post(
+    '/broadcasts/:broadcastId/channels/current',
+    zValidator(
+      'json',
+      z.object({ newCurrentChannelId: z.string() }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const { newCurrentChannelId }  = c.req.valid('json')
+
+      await postBroadcastsChannelsCurrent({ broadcastId, newCurrentChannelId })
+      return c.body(null, 200)
     },
   )
 
