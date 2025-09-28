@@ -1,7 +1,7 @@
-import { hc } from 'videmus-webrtc'
+import { hc } from 'hono/client'
 import type { AppType } from 'videmus-webrtc'
 
-const client = hc<AppType>(process.env.NEXT_PUBLIC_API_URL ?? "")
+const client = hc<AppType>(process.env.API_URL ?? "")
 
 /**
  * 新しい配信IDを無効化状態で作成します

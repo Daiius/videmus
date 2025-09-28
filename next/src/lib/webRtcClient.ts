@@ -5,7 +5,7 @@ import {
   RtpParameters,
 } from 'mediasoup-client/types'
 
-import { hc } from 'videmus-webrtc'
+import { hc } from 'hono/client'
 import type { AppType } from 'videmus-webrtc'
 
 

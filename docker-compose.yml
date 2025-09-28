@@ -16,6 +16,8 @@ services:
       - /workspace/database/node_modules
       - ./next:/workspace/next
       - /workspace/next/node_modules
+      - ./webrtc:/workspace/webrtc
+      - /workspace/webrtc/node_modules
       - /workspace/node_modules
     tmpfs:
       - /workspace/app/.next

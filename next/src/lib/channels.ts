@@ -1,9 +1,9 @@
-import { hc } from 'videmus-webrtc'
+import { hc } from 'hono/client'
 import type { AppType } from 'videmus-webrtc'
 
 import { z } from 'zod';
 
-const client = hc<AppType>(process.env.NEXT_PUBLIC_API_URL ?? "")
+const client = hc<AppType>(process.env.API_URL ?? "")
 
 // NOTE: 注意！最新版だとどこか齟齬が出るのか、create*Schema系がエラーになる
 // 手動で対応するが、矛盾しないように注意

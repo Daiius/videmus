@@ -19,8 +19,8 @@ import { postBroadcast } from './lib/postBroadcast'
 import { getBroadcastsById } from './lib/getBroadcastsById'
 import { postBroadcastsChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
 import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
-import {postBroadcastsChannels} from './lib/postBroadcastsChannels'
-import {deleteBroadcastsChannels} from './lib/deleteBroadcastsChannels'
+import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
+import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
 
 export const app = new Hono()

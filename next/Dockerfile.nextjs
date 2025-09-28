@@ -8,6 +8,8 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 # monorepo database
 COPY database/package.json /workspace/database/
+# monorepo webrtc
+COPY webrtc/package.json /workspace/webrtc/
 # monorepo nextjs
 COPY next/package.json next/tsconfig.json /workspace/next/
 
