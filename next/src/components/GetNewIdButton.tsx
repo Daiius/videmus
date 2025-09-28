@@ -16,8 +16,8 @@ const GetNewIdButton = ({
   const router = useRouter()
   const handleClick = async () => {
     try {
-      const newId = await createNewId()
-      router.push(`/broadcast/${newId}`)
+      const { newBroadcastId } = await createNewId()
+      router.push(`/broadcast/${newBroadcastId}`)
     } catch (err) {
       console.error(err)
     }

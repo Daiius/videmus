@@ -8,8 +8,14 @@
     "build": "tsx esbuild.config.ts",
     "start": "node dist/server.js"
   },
+  "exports": {
+    ".": {
+      "import": "./src/app.ts"
+    }
+  },
   "dependencies": {
     "@hono/node-server": "^1.19.4",
+    "@hono/zod-validator": "^0.7.3",
     "debug": "^4.4.1",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.9.8",
@@ -18,7 +24,9 @@
     "mysql2": "^3.14.1",
     "nanoid": "^5.1.5",
     "sdp-transform": "^2.15.0",
-    "videmus-database": "workspace:*"
+    "uuid": "^11.1.0",
+    "videmus-database": "workspace:*",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",

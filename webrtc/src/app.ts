@@ -1,4 +1,6 @@
 import { Hono, type Context } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod/v4'
 import { cors } from 'hono/cors'
 
 import { postWhip } from './lib/postWhip'
@@ -8,11 +10,19 @@ import { getStreamingStatus } from './lib/getStreamingStatus'
 import { postCurrentChannel } from './lib/postCurrentChannel'
 
 import type { VidemusError } from './types'
-import {getMediasoupRouterRtpCapabilities} from './lib/getMediasoupRouterRtpCapabilities'
-import {getMediasoupStreamerTransportParameters} from './lib/getMediasoupStreamerTransportParameters'
-import {postMediasoupClientConnect} from './lib/postMediasoupClientConnect'
-import {postMediasoupConsumerParameters} from './lib/postMediasoupConsumerParameters'
-import {postMediasoupResumeConsumer} from './lib/postMediasoupResumeConsumer'
+import { getMediasoupRouterRtpCapabilities } from './lib/getMediasoupRouterRtpCapabilities'
+import { getMediasoupStreamerTransportParameters } from './lib/getMediasoupStreamerTransportParameters'
+import { postMediasoupClientConnect } from './lib/postMediasoupClientConnect'
+import { postMediasoupConsumerParameters } from './lib/postMediasoupConsumerParameters'
+import { postMediasoupResumeConsumer } from './lib/postMediasoupResumeConsumer'
+import { postBroadcast } from './lib/postBroadcast'
+import { getBroadcastsById } from './lib/getBroadcastsById'
+import { postBroadcastsChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
+import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
+import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
+import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
+
+import { bearerAuth } from './middlewares'
 
 
 export const app = new Hono()
@@ -135,6 +145,7 @@ const route =
    */
   .post(
     '/current-channel/:broadcastId',
+    bearerAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const newChannelId = (await c.req.json()).currentChannelId;
@@ -196,10 +207,14 @@ const route =
    */
   .post(
     '/mediasoup/client-connect/:streamId/:transportId',
+    zValidator(
+      'json',
+      z.any(),
+    ),
     async c => {
       const streamId = c.req.param('streamId')
       const transportId = c.req.param('transportId')
-      const dtlsParameters = await c.req.json()
+      const dtlsParameters = c.req.valid('json')
 
       const result = await postMediasoupClientConnect({ streamId, transportId, dtlsParameters })
 
@@ -219,6 +234,10 @@ const route =
    */
   .post(
     '/mediasoup/consumer-parameters/:streamId/:transportId',
+    zValidator(
+      'json',
+      z.any(),
+    ),
     async c => {
       const streamId = c.req.param('streamId')
       const transportId = c.req.param('transportId')
@@ -254,6 +273,126 @@ const route =
       return c.text(result.data.message, 200)
     },
   )
+  /**
+   * 新しい配信IDを無効化状態で作成します
+   * 新しいチャンネルも1つデフォルト値で作成します
+   */
+  .post(
+    '/broadcasts',
+    bearerAuth,
+    async c => {
+      const result = await postBroadcast()
+      return c.json(result, 200)
+    },
+  )
+  /**
+   * 指定した配信IDの情報を取得します
+   * broadcastIdはURLに指定されたものを受け取るので、
+   * 存在しない値が入る場合をスムーズに扱うため、
+   * その場合undefinedを返します
+   *
+   * currentChannelIdはデータベース制約上はnullになる可能性がありますが
+   * (MySQLでdeferred constraintが使えないため妥協)
+   * この関数を経由して取得するようにし、
+   * TODO: どうやって強制する？？
+   * ここでnullチェックと有効な値のセットを事前に行うようにします
+   */
+  .get(
+    '/broadcasts/:broadcastId',
+    bearerAuth,
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const result = await getBroadcastsById({ broadcastId })
+
+      return c.json(result, 200)
+    },
+  )
+  /**
+   * 配信チャンネルを変更します
+   */
+  .post(
+    '/broadcasts/:broadcastId/channels/current',
+    bearerAuth,
+    zValidator(
+      'json',
+      z.object({ newCurrentChannelId: z.string() }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const { newCurrentChannelId }  = c.req.valid('json')
+
+      await postBroadcastsChannelsCurrent({ broadcastId, newCurrentChannelId })
+      return c.body(null, 200)
+    },
+  )
+  /**
+   * 既存配信チャンネルのデータを更新します
+   */
+  .patch(
+    '/broadcasts/:broadcastId/channels/:channelId',
+    bearerAuth,
+    zValidator(
+      'json',
+      z.object({
+        name: 
+          z.string()
+          .max(254, 'channel name is too long!')
+          .optional(),
+        description:
+          z.string()
+          .max(1024, 'description is too long!')
+          .optional(),
+      }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const channelId = c.req.param('channelId')
+      const params = c.req.valid('json')
+
+      await patchBroadcastsChannels({ broadcastId, channelId, params })
+
+      return c.body(null, 200)
+    },
+  )
+  .post(
+    '/broadcasts/:broadcastId/channels',
+    bearerAuth,
+    zValidator(
+      'json',
+      z.object({
+        name: 
+          z.string()
+          .max(254, 'channel name is too long!'),
+        description:
+          z.string()
+          .max(1024, 'description is too long!'),
+      }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const params = c.req.valid('json')
+
+      console.log('broadcastId, params: %O, %O', broadcastId, params)
+
+      await postBroadcastsChannels({ broadcastId, params })
+
+      return c.body(null, 200)
+    },
+  )
+  .delete(
+    '/broadcasts/:broadcastId/channels/:channelId',
+    bearerAuth,
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const channelId = c.req.param('channelId')
+
+      await deleteBroadcastsChannels({ broadcastId, channelId })
+
+      return c.body(null, 200)
+    },
+  )
+
+
 
 export type AppType = typeof route
 
