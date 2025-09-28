@@ -1,14 +1,9 @@
-import { db } from 'videmus-database/db';
-import { 
-  //broadcastIds,
-  channels,
-} from 'videmus-database/db/schema';
-import { eq, and } from 'drizzle-orm';
-//import { createSelectSchema } from 'drizzle-zod';
-
-import { nanoid } from 'nanoid';
+import { hc } from 'videmus-webrtc'
+import type { AppType } from 'videmus-webrtc'
 
 import { z } from 'zod';
+
+const client = hc<AppType>(process.env.NEXT_PUBLIC_API_URL ?? "")
 
 // NOTE: 注意！最新版だとどこか齟齬が出るのか、create*Schema系がエラーになる
 // 手動で対応するが、矛盾しないように注意
@@ -23,16 +18,6 @@ z.object({
     .max(1024, 'description is too long!')
     .optional(),
 });
-//  createSelectSchema(channels);
-//  .extend({
-//    name: z.string()
-//      .max(256, 'channel name is too long!')
-//      .optional(),
-//    description: z.string()
-//      .max(1024, 'description is too long!')
-//      .optional()
-//  })
-//  .pick({ name: true, description: true, });
 
 export type UpdateChannelParameter = 
   z.infer<typeof updateChannelParameterSchema>;
@@ -42,16 +27,17 @@ export const updateChannel = async (
   channelId: string,
   params: UpdateChannelParameter,
 ) => {
-  const parsedParams = updateChannelParameterSchema.parse(params);
-  await db
-    .update(channels)
-    .set(parsedParams)
-    .where(
-      and(
-        eq(channels.id, channelId),
-        eq(channels.broadcastId, broadcastId)
-      )
-    );
+  const response = await client.broadcasts[':broadcastId'].channels[':channelId'].$patch({
+    param: { broadcastId, channelId },
+    json: params,
+  })
+  if (!response.ok) {
+    throw new Error(
+      `チャンネル情報の更新に失敗しました: ${response.status} ${response.statusText}`
+    )
+  }
+
+  return await response.json()
 }
 
 // NOTE: 注意！最新版だとどこか齟齬が出るのか、create*Schema系がエラーになる
@@ -73,31 +59,30 @@ export const createChannel = async (
   broadcastId: string,
   params: CreateChannelParameter
 ) => {
-  await db.insert(channels).values({
-    broadcastId,
-    id: nanoid(),
-    ...params
-  });
+  const response = await client.broadcasts[':broadcastId'].channels.$post({
+    param: { broadcastId },
+    json: params,
+  })
+  if (!response.ok) {
+    throw new Error(
+      `チャンネルの新規作成に失敗しました ${response.status} ${response.statusText}`
+    )
+  }
+  //return await response.json()
 };
 
 export const deleteChannel = async (
   broadcastId: string,
   channelId: string,
 ) => {
-  const relatedChannels = await db.select()
-    .from(channels)
-    .where(
-      eq(channels.broadcastId, broadcastId),
-    );
-  if (relatedChannels.length < 2) {
-    throw new Error('you cannot delete all channels');
+  const response = await client.broadcasts[':broadcastId'].channels[':channelId'].$delete({
+    param: { broadcastId, channelId },
+  })
+  if (!response.ok) {
+    throw new Error(
+      `チャンネルの削除に失敗しました ${response.status} ${response.statusText}`
+    )
   }
-  await db
-    .delete(channels)
-    .where(
-      and(
-        eq(channels.id, channelId),
-        eq(channels.broadcastId, broadcastId)
-      )
-    );
-};
+  //return await response.json()
+}
+

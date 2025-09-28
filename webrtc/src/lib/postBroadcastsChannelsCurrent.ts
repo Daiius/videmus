@@ -9,6 +9,9 @@ type PostBroadcastsChannelsCurrentArgs = {
   newCurrentChannelId: string,
 }
 
+/**
+ * 配信チャンネルを変更します
+ */
 export const postBroadcastsChannelsCurrent = async ({
   broadcastId,
   newCurrentChannelId,
@@ -30,3 +33,4 @@ export const postBroadcastsChannelsCurrent = async ({
     .set({ currentChannelId: newCurrentChannelId })
     .where(eq(broadcastIds.id, broadcastId));
 }
+

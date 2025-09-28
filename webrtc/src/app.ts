@@ -18,6 +18,9 @@ import { postMediasoupResumeConsumer } from './lib/postMediasoupResumeConsumer'
 import { postBroadcast } from './lib/postBroadcast'
 import { getBroadcastsById } from './lib/getBroadcastsById'
 import { postBroadcastsChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
+import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
+import {postBroadcastsChannels} from './lib/postBroadcastsChannels'
+import {deleteBroadcastsChannels} from './lib/deleteBroadcastsChannels'
 
 
 export const app = new Hono()
@@ -308,6 +311,69 @@ const route =
       return c.body(null, 200)
     },
   )
+  /**
+   * 既存配信チャンネルのデータを更新します
+   */
+  .patch(
+    '/broadcasts/:broadcastId/channels/:channelId',
+    zValidator(
+      'json',
+      z.object({
+        name: 
+          z.string()
+          .max(254, 'channel name is too long!')
+          .optional(),
+        description:
+          z.string()
+          .max(1024, 'description is too long!')
+          .optional(),
+      }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const channelId = c.req.param('channelId')
+      const params = c.req.valid('json')
+
+      await patchBroadcastsChannels({ broadcastId, channelId, params })
+
+      return c.body(null, 200)
+    },
+  )
+  .post(
+    '/broadcasts/:broadcastId/channels',
+    zValidator(
+      'json',
+      z.object({
+        name: 
+          z.string()
+          .max(254, 'channel name is too long!'),
+        description:
+          z.string()
+          .max(1024, 'description is too long!'),
+      }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const params = c.req.valid('json')
+
+      await postBroadcastsChannels({ broadcastId, params })
+
+      return c.body(null, 200)
+    },
+  )
+  .delete(
+    '/broadcasts/:broadcastId/channels/:channelId',
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const channelId = c.req.param('channelId')
+
+      await deleteBroadcastsChannels({ broadcastId, channelId })
+
+      return c.body(null, 200)
+    },
+  )
+
+
 
 export type AppType = typeof route
 
