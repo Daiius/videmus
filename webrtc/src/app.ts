@@ -204,10 +204,14 @@ const route =
    */
   .post(
     '/mediasoup/client-connect/:streamId/:transportId',
+    zValidator(
+      'json',
+      z.any(),
+    ),
     async c => {
       const streamId = c.req.param('streamId')
       const transportId = c.req.param('transportId')
-      const dtlsParameters = await c.req.json()
+      const dtlsParameters = c.req.valid('json')
 
       const result = await postMediasoupClientConnect({ streamId, transportId, dtlsParameters })
 
@@ -227,6 +231,10 @@ const route =
    */
   .post(
     '/mediasoup/consumer-parameters/:streamId/:transportId',
+    zValidator(
+      'json',
+      z.any(),
+    ),
     async c => {
       const streamId = c.req.param('streamId')
       const transportId = c.req.param('transportId')

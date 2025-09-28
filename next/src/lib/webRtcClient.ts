@@ -1,10 +1,15 @@
-import { Device } from 'mediasoup-client';
+import { Device } from 'mediasoup-client'
 import { 
   Consumer,
-  //Transport,
   MediaKind,
   RtpParameters,
-} from 'mediasoup-client/types';
+} from 'mediasoup-client/types'
+
+import { hc } from 'videmus-webrtc'
+import type { AppType } from 'videmus-webrtc'
+
+
+const client = hc<AppType>(process.env.NEXT_PUBLIC_API_URL ?? '')
 
 export const createWebRtcStreams = async (
   streamId: string,
@@ -19,12 +24,9 @@ export const createWebRtcStreams = async (
   onFailed?: () => void,
 ): Promise<Consumer[]> => {
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-
   // サーバ側の動画・音声フォーマット対応状況など取得します
-  const routerRtpCapabilitiesResponse = await fetch(
-    `${baseUrl}/mediasoup/router-rtp-capabilities/${streamId}`
-  );
+  const routerRtpCapabilitiesResponse = await client.mediasoup['router-rtp-capabilities'][':id'].$get({ param: { id: streamId } })
+  
   if (!routerRtpCapabilitiesResponse.ok) {
     throw new Error(`channel ${streamId} seems to be closed.`);
   }
@@ -37,9 +39,7 @@ export const createWebRtcStreams = async (
 
   // サーバ側で視聴者毎に用意されるtransportの情報を取得します
   // （サーバ側ではこのリクエストを受けてから応答するまでの間にtransportを生成します）
-  const transportParametersResponse = await fetch(
-    `${baseUrl}/mediasoup/streamer-transport-parameters/${streamId}`
-  );
+  const transportParametersResponse = await client.mediasoup['streamer-transport-parameters'][':id'].$get({ param: { id: streamId } })
   if (!transportParametersResponse.ok) {
     throw new Error(`failed to fetch streaming parameters`);
   }
@@ -51,11 +51,9 @@ export const createWebRtcStreams = async (
     'connect', 
     async ({ dtlsParameters }, callback, errback) => {
       try {
-        await fetch(
-          `${baseUrl}/mediasoup/client-connect/${streamId}/${transportParameters.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dtlsParameters),
+        await client.mediasoup['client-connect'][':streamId'][':transportId'].$post({
+          param: { streamId, transportId: transportParameters.id },
+          json: dtlsParameters,
         })
         callback();
       } catch (error) {
@@ -77,12 +75,11 @@ export const createWebRtcStreams = async (
 
   // クライアント側の音声・映像対応状況に合わせたconsumer生成を
   // サーバ側に依頼します
-  const consumerParametersResponse = await fetch(
-    `${baseUrl}/mediasoup/consumer-parameters/${streamId}/${transportParameters.id}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(device.rtpCapabilities),
-  });
+  const consumerParametersResponse = await client.mediasoup['consumer-parameters'][':streamId'][':transportId'].$post({
+    param: { streamId, transportId: transportParameters.id },
+    json: device.rtpCapabilities,
+  })
+  
   if (!consumerParametersResponse.ok) {
     throw new Error(`failed to fetch comsumer parameters`);
   }
@@ -102,11 +99,10 @@ export const createWebRtcStreams = async (
   //consumers.forEach(c => c.resume());
   // サーバ側でconsumerはpause状態で生成されているので、
   // ここまできて受診準備が整ったらストリーム開始を依頼します
-  const resumeConsumerResponse = await fetch(
-    `${baseUrl}/mediasoup/resume-consumer/${streamId}/${transportParameters.id}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const resumeConsumerResponse = await client.mediasoup['resume-consumer'][':streamId'][':transportId'].$post({
+    param: { streamId, transportId: transportParameters.id },
+  })
+  
   if (!resumeConsumerResponse.ok) {
     throw new Error('server consumer resume request failed.');
   }
