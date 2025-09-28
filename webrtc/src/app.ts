@@ -22,6 +22,8 @@ import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
 import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
+import { bearerAuth } from './middlewares'
+
 
 export const app = new Hono()
 
@@ -143,6 +145,7 @@ const route =
    */
   .post(
     '/current-channel/:broadcastId',
+    bearerAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const newChannelId = (await c.req.json()).currentChannelId;
@@ -276,6 +279,7 @@ const route =
    */
   .post(
     '/broadcasts',
+    bearerAuth,
     async c => {
       const result = await postBroadcast()
       return c.json(result, 200)
@@ -295,6 +299,7 @@ const route =
    */
   .get(
     '/broadcasts/:broadcastId',
+    bearerAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const result = await getBroadcastsById({ broadcastId })
@@ -307,6 +312,7 @@ const route =
    */
   .post(
     '/broadcasts/:broadcastId/channels/current',
+    bearerAuth,
     zValidator(
       'json',
       z.object({ newCurrentChannelId: z.string() }),
@@ -324,6 +330,7 @@ const route =
    */
   .patch(
     '/broadcasts/:broadcastId/channels/:channelId',
+    bearerAuth,
     zValidator(
       'json',
       z.object({
@@ -349,6 +356,7 @@ const route =
   )
   .post(
     '/broadcasts/:broadcastId/channels',
+    bearerAuth,
     zValidator(
       'json',
       z.object({
@@ -364,6 +372,8 @@ const route =
       const broadcastId = c.req.param('broadcastId')
       const params = c.req.valid('json')
 
+      console.log('broadcastId, params: %O, %O', broadcastId, params)
+
       await postBroadcastsChannels({ broadcastId, params })
 
       return c.body(null, 200)
@@ -371,6 +381,7 @@ const route =
   )
   .delete(
     '/broadcasts/:broadcastId/channels/:channelId',
+    bearerAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const channelId = c.req.param('channelId')

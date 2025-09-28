@@ -80,9 +80,6 @@ importers:
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
-      videmus-database:
-        specifier: workspace:*
-        version: link:../database
       videmus-webrtc:
         specifier: workspace:*
         version: link:../webrtc

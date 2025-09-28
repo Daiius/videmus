@@ -1,14 +1,17 @@
-import { hc } from 'hono/client'
-import type { AppType } from 'videmus-webrtc'
+import { clientWithAuth } from '@/lib/api'
 
-const client = hc<AppType>(process.env.API_URL ?? "")
+import { InferResponseType } from 'hono'
+
+const $get = clientWithAuth.broadcasts[':broadcastId'].$get
+type Broadcast = InferResponseType<typeof $get>
+export type Channel = Broadcast['channels'][number]
 
 /**
  * 新しい配信IDを無効化状態で作成します
  * 新しいチャンネルも1つデフォルト値で作成します
  */
 export const createNewBroadcastId = async () => {
-  const response = await client.broadcasts.$post()
+  const response = await clientWithAuth.broadcasts.$post()
   if (!response.ok) {
     throw new Error(
       `新規配信ID作成時にエラーが発生しました: ${response.status} ${response.statusText}`
@@ -30,7 +33,7 @@ export const createNewBroadcastId = async () => {
  * ここでnullチェックと有効な値のセットを事前に行うようにします
  */
 export const getBroadcastInfo = async (broadcastId: string)  => {
-  const response = await client.broadcasts[':broadcastId'].$get({ param: { broadcastId } })
+  const response = await clientWithAuth.broadcasts[':broadcastId'].$get({ param: { broadcastId } })
   if (!response.ok) {
     throw new Error(
       `配信ステータス取得時にエラーが発生しました ${response.status} ${response.statusText}`
@@ -47,7 +50,7 @@ export const updateCurrentChannel = async (
   broadcastId: string,
   newCurrentChannelId: string,
 ) => {
-  const response = await client.broadcasts[':broadcastId'].channels.current.$post({ 
+  const response = await clientWithAuth.broadcasts[':broadcastId'].channels.current.$post({ 
     param: { broadcastId },
     json: { newCurrentChannelId },
   })
@@ -56,6 +59,5 @@ export const updateCurrentChannel = async (
       `配信チャンネル変更時にエラーが発生しました ${response.status} ${response.statusText}`
     )
   }
-  return await response.json()
 };
 

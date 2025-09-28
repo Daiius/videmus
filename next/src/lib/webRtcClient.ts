@@ -5,11 +5,7 @@ import {
   RtpParameters,
 } from 'mediasoup-client/types'
 
-import { hc } from 'hono/client'
-import type { AppType } from 'videmus-webrtc'
-
-
-const client = hc<AppType>(process.env.NEXT_PUBLIC_API_URL ?? '')
+import { client } from '@/lib/api'
 
 export const createWebRtcStreams = async (
   streamId: string,

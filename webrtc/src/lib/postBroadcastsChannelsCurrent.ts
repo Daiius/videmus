@@ -19,7 +19,7 @@ export const postBroadcastsChannelsCurrent = async ({
   const test = await db.query.channels.findFirst({
     where: 
       and(
-        eq(broadcastIds.id, broadcastId),
+        eq(channels.broadcastId, broadcastId),
         eq(channels.id, newCurrentChannelId),
       )
   })

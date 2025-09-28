@@ -1,9 +1,6 @@
-import { hc } from 'hono/client'
-import type { AppType } from 'videmus-webrtc'
-
 import { z } from 'zod';
 
-const client = hc<AppType>(process.env.API_URL ?? "")
+import { clientWithAuth } from '@/lib/api';
 
 // NOTE: 注意！最新版だとどこか齟齬が出るのか、create*Schema系がエラーになる
 // 手動で対応するが、矛盾しないように注意
@@ -27,7 +24,7 @@ export const updateChannel = async (
   channelId: string,
   params: UpdateChannelParameter,
 ) => {
-  const response = await client.broadcasts[':broadcastId'].channels[':channelId'].$patch({
+  const response = await clientWithAuth.broadcasts[':broadcastId'].channels[':channelId'].$patch({
     param: { broadcastId, channelId },
     json: params,
   })
@@ -59,7 +56,8 @@ export const createChannel = async (
   broadcastId: string,
   params: CreateChannelParameter
 ) => {
-  const response = await client.broadcasts[':broadcastId'].channels.$post({
+  console.log(params)
+  const response = await clientWithAuth.broadcasts[':broadcastId'].channels.$post({
     param: { broadcastId },
     json: params,
   })
@@ -75,7 +73,7 @@ export const deleteChannel = async (
   broadcastId: string,
   channelId: string,
 ) => {
-  const response = await client.broadcasts[':broadcastId'].channels[':channelId'].$delete({
+  const response = await clientWithAuth.broadcasts[':broadcastId'].channels[':channelId'].$delete({
     param: { broadcastId, channelId },
   })
   if (!response.ok) {
