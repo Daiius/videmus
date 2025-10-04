@@ -1,4 +1,4 @@
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 
 WORKDIR /workspace/webrtc
 
@@ -18,7 +18,7 @@ COPY ./webrtc/tsconfig.json ./webrtc/esbuild.config.ts /workspace/webrtc/
 RUN pnpm build
 
 
-FROM node:20-slim AS node_modules
+FROM node:22-slim AS node_modules
 WORKDIR /workspace/webrtc
 
 RUN npm install -g pnpm
@@ -35,7 +35,7 @@ RUN pnpm install --prod --filter videmus-webrtc --filter videmus-database
 #RUN ls ./node_modules/tsx/dist
 
 
-FROM gcr.io/distroless/nodejs20:debug
+FROM gcr.io/distroless/nodejs22:debug
 
 WORKDIR /workspace/webrtc
 
