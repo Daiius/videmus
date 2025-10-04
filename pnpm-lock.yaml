@@ -41,12 +41,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      drizzle-orm:
-        specifier: 0.44.2
-        version: 0.44.2(@libsql/client-wasm@0.14.0)(mysql2@3.14.1)
-      drizzle-zod:
-        specifier: ^0.8.2
-        version: 0.8.2(drizzle-orm@0.44.2(@libsql/client-wasm@0.14.0)(mysql2@3.14.1))(zod@3.25.67)
       hono:
         specifier: ^4.9.8
         version: 4.9.8
@@ -1072,12 +1066,6 @@ packages:
         optional: true
       sqlite3:
         optional: true
-
-  drizzle-zod@0.8.2:
-    resolution: {integrity: sha512-9Do/16OjFFNrQDZgvMtxtDDwKWbFOxUAIwNPKX98SfxrP8H18vhN1BvNXbhelLcdgCE7GEaXDJqBjMExSkhpkA==}
-    peerDependencies:
-      drizzle-orm: '>=0.36.0'
-      zod: ^3.25.1
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -2352,11 +2340,6 @@ snapshots:
     optionalDependencies:
       '@libsql/client-wasm': 0.14.0
       mysql2: 3.14.1
-
-  drizzle-zod@0.8.2(drizzle-orm@0.44.2(@libsql/client-wasm@0.14.0)(mysql2@3.14.1))(zod@3.25.67):
-    dependencies:
-      drizzle-orm: 0.44.2(@libsql/client-wasm@0.14.0)(mysql2@3.14.1)
-      zod: 3.25.67
 
   dunder-proto@1.0.1:
     dependencies:
