@@ -27,8 +27,9 @@ import { bearerAuth } from './middlewares'
 
 export const app = new Hono()
 
+const origin = process.env.CORS_ORIGINS?.split(',') ?? []
 app.use('*', cors({
-  origin: 'http://localhost:3000',
+  origin,
   allowMethods: ['GET', 'POST', 'DELETE'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }))
