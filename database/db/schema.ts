@@ -59,6 +59,8 @@ export const channels = mysqlTable(
       varchar('description', { length: 1024 })
         .notNull()
         .default(''),
+    thumbnailUrl:
+      varchar('thumbnail_url', { length: 128 }),
     createdTime:
       timestamp('created_time', { mode: 'date' })
         .notNull()
