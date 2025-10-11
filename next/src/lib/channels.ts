@@ -84,3 +84,20 @@ export const deleteChannel = async (
   //return await response.json()
 }
 
+export const uploadThumbnail = async (
+  broadcastId: string,
+  channelId: string,
+  file: File,
+) => {
+  const response = await clientWithAuth
+    .broadcasts[":broadcastId"].channels[':channelId'].thumbnail
+    .$post({
+      form: { file },
+      param: { broadcastId, channelId }
+    })
+  if (!response.ok) {
+    throw new Error(
+      `サムネイルアップロードに失敗しました ${response.status} ${response.statusText}`
+    )
+  }
+}

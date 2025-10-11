@@ -2,7 +2,11 @@
 
 import clsx from 'clsx'
 
+import { useRouter } from 'next/navigation'
+
 import { Channel } from '@/lib/broadcastIds'
+
+import { uploadThumbnail } from '@/actions/channelActions'
 
 import Panel from '@/components/Panel'
 import ChannelNameInput from './ChannelNameInput'
@@ -23,6 +27,8 @@ const ChannelPanel = ({
   canDelete,
   className,
 }: ChannelPanelProps) => {
+
+  const router = useRouter()
 
   const streamUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/stream/${channel.id}`
 
@@ -54,6 +60,27 @@ const ChannelPanel = ({
         streamUrl={streamUrl} 
         hideButton={channel.id !== currentChannelId}
       />
+
+      <div>
+        <form
+          onSubmit={async e => {
+            e.preventDefault()
+            const formData = new FormData(e.currentTarget)
+            const file = formData.get('thumbnail-file') as File | null
+
+            if (!file) return
+
+            await uploadThumbnail(channel.broadcastId, channel.id, file)
+            router.refresh()
+
+          }}
+        >
+          <input type="file" name="thumbnail-file" accept="image/png,image/jpeg,image/webp" />
+          <button type="submit">アップロード</button>
+          <img src={channel.thumbnailUrl ?? ''} />
+        </form>
+      </div>
+
       {channel.id !== currentChannelId &&
         <SelectCurrentChannelButton
           broadcastId={channel.broadcastId}
