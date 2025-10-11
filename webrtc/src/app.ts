@@ -23,6 +23,7 @@ import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
 import { bearerAuth } from './middlewares'
+import {postThumbnailImage} from './lib/postThumbnailImage'
 
 
 export const app = new Hono()
@@ -35,6 +36,7 @@ app.use('*', cors({
 }))
 
 const handleError = <C extends Context>(c: C, error: VidemusError) => {
+  console.error('%o', error)
   switch (error.type) {
     case "ResourceNotFound":
       return c.text(error.message, 404) // 存在しないリソース
@@ -392,8 +394,30 @@ const route =
       return c.body(null, 200)
     },
   )
+  .post(
+    '/broadcasts/:broadcastId/channels/:channelId/thumbnail',
+    zValidator('form', z.object({
+      file: z.instanceof(File)
+        .refine(
+          f => ['image/jpeg', 'image/png', 'image/webp'].includes(f.type),
+            'invalid type',
+        )
+        .refine(f => f.size <= 5 * 1024 * 1024, 'file too large (max 5MB)'),
+    })),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const channelId = c.req.param('channelId')
+      const { file } = c.req.valid('form')
 
+      console.log('postThumbnailImage')
 
+      const result = await postThumbnailImage({ broadcastId, channelId, file })
+      if (!result.success) {
+        return handleError(c, result.error)
+      }
+      return c.body(null, 200)
+    },
+  )
 
 export type AppType = typeof route
 
