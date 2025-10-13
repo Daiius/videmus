@@ -1,4 +1,4 @@
-import { clientWithAuth } from '@/lib/api'
+import { clientWithAuth, client } from '@/lib/api'
 
 import { InferResponseType } from 'hono'
 
@@ -33,7 +33,7 @@ export const createNewBroadcastId = async () => {
  * ここでnullチェックと有効な値のセットを事前に行うようにします
  */
 export const getBroadcastInfo = async (broadcastId: string)  => {
-  const response = await clientWithAuth.broadcasts[':broadcastId'].$get({ param: { broadcastId } })
+  const response = await client.broadcasts[':broadcastId'].$get({ param: { broadcastId } })
   if (!response.ok) {
     throw new Error(
       `配信ステータス取得時にエラーが発生しました ${response.status} ${response.statusText}`
