@@ -18,7 +18,7 @@ const Panel = ({
   <div 
     className={clsx(
       'bg-panel rounded-sm',
-      inline && 'flex flex-row items-center gap-4', 
+      inline && 'flex items-center gap-4', 
       className,
     )}
   >

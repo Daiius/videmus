@@ -25,7 +25,7 @@ export default function RootLayout({
       >
         <Header />
         <div className={clsx(
-          'p-2',
+          'p-2 flex flex-col w-full items-center',
         )}>
           {children}
         </div>

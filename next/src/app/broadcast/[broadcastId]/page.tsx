@@ -39,7 +39,7 @@ const BroadcasterPage: React.FC<{
   return (
     <div className={clsx(
       'flex flex-col gap-2',
-      'lg:px-52 md:px-12',
+      'lg:px-52 md:px-12 w-full',
     )}>
       <BroadcastIdPanel 
         broadcastId={broadcastId}
