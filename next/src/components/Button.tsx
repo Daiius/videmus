@@ -11,12 +11,12 @@ const Button: React.FC<
 }) => (
   <HeadlessButton
     type='button'
-    className={clsx(
-      'bg-primary rounded-md',
-      'hover:bg-primary-hover',
-      'focus:outline focus:outline-primary-highlight',
-      'active:outline active:outline-primary-highlight',
-      'px-2 py-1',
+    className={clsx(`
+       bg-primary rounded-md
+       hover:bg-primary-hover
+       focus:border focus:border-primary-highlight
+       active:border active:border-primary-highlight
+       px-2 py-1`,
       className
     )}
     {...props}

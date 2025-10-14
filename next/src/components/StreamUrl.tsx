@@ -23,13 +23,14 @@ const StreamUrl = ({
   return (
     <div
       className={clsx(
-        'flex flex-row gap-2 items-center',
+        'flex flex-row gap-2 items-center w-full pr-2',
         className,
       )}
     >
-      <div className='overflow-ellipsis text-nowrap'>{streamUrl}</div>
+      <div className='overflow-ellipsis text-nowrap overflow-hidden'>{streamUrl}</div>
       {!hideButton && 
         <Button
+          className='bg-transparent'
           onClick={async () => {
             await navigator.clipboard.writeText(streamUrl)
             setIsCopied(true)

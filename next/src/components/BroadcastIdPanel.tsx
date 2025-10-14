@@ -21,8 +21,8 @@ const BroadcastIdPanel = ({
     inline
     className={clsx(className)}
   >
-    <div className='flex flex-row gap-1 items-center'>
-      <div>{broadcastId}</div>
+    <div className='flex gap-1 items-center w-full'>
+      <div className='overflow-ellipsis overflow-hidden whitespace-nowrap'>{broadcastId}</div>
       {isAvailable
         ? <CheckCircleIcon className='size-4 text-green-400' /> 
         : <XCircleIcon className='size-4 text-red-400' />
