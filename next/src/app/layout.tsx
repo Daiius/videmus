@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang='jp'>
       <body
         className={clsx(
-          'bg-background antialiased w-full min-h-screen',
+          'bg-background antialiased w-full min-h-dvh',
           'text-foreground',
         )}
       >
