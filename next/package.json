@@ -14,16 +14,15 @@
     "clsx": "^2.1.1",
     "hono": "^4.9.8",
     "mediasoup-client": "^3.12.2",
-    "mysql2": "3.14.1",
     "nanoid": "^5.1.5",
-    "next": "16.0.10",
+    "next": "16.1.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "swr": "^2.3.3",
-    "use-debounce": "^10.0.5",
+    "swr": "^2.3.8",
+    "use-debounce": "^10.1.0",
     "uuid": "^11.1.0",
     "videmus-webrtc": "workspace:*",
-    "zod": "^3.25.67"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^24.0.7",
