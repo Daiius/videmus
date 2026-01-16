@@ -117,9 +117,6 @@ importers:
       debug:
         specifier: ^4.4.1
         version: 4.4.3(supports-color@10.2.2)
-      drizzle-orm:
-        specifier: 1.0.0-beta.11-fc31a5f
-        version: 1.0.0-beta.11-fc31a5f(@libsql/client-wasm@0.14.0)(@types/mssql@9.1.8)(mssql@11.0.1)(mysql2@3.14.1)
       hono:
         specifier: ^4.9.8
         version: 4.9.8
@@ -132,15 +129,9 @@ importers:
       mysql2:
         specifier: ^3.14.1
         version: 3.14.1
-      nanoid:
-        specifier: ^5.1.5
-        version: 5.1.5
       sdp-transform:
         specifier: ^2.15.0
         version: 2.15.0
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
       videmus-database:
         specifier: workspace:*
         version: link:../database
