@@ -17,7 +17,7 @@ import { postMediasoupConsumerParameters } from './lib/postMediasoupConsumerPara
 import { postMediasoupResumeConsumer } from './lib/postMediasoupResumeConsumer'
 import { postBroadcast } from './lib/postBroadcast'
 import { getBroadcastsById } from './lib/getBroadcastsById'
-import { postBroadcastsChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
+import { postBroadcastChannelsCurrent } from './lib/postBroadcastsChannelsCurrent'
 import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
 import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
@@ -303,7 +303,7 @@ const route =
     bearerAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
-      const result = await getBroadcastsById({ broadcastId })
+      const result = await getBroadcastsById(broadcastId)
 
       return c.json(result, 200)
     },
@@ -322,7 +322,7 @@ const route =
       const broadcastId = c.req.param('broadcastId')
       const { newCurrentChannelId }  = c.req.valid('json')
 
-      await postBroadcastsChannelsCurrent({ broadcastId, newCurrentChannelId })
+      await postBroadcastChannelsCurrent(broadcastId, newCurrentChannelId)
       return c.body(null, 200)
     },
   )

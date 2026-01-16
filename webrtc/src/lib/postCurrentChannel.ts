@@ -1,9 +1,7 @@
 
-import { broadcastIds } from 'videmus-database/db/schema';
-import { db } from 'videmus-database/db';
-import { eq } from 'drizzle-orm';
 import type { VidemusResult } from '../types'
 import { resourcesDict } from '../resources'
+import {getBroadcastsById} from './getBroadcastsById';
 
 type PostCurrentChannelArgs = {
   broadcastId: string,
@@ -23,9 +21,7 @@ export const postCurrentChannel = async ({
   broadcastId,
   newChannelId,
 }: PostCurrentChannelArgs): Promise<VidemusResult<PostCurrentChannelResult>> => {
-  const broadcast = await db.query.broadcastIds.findFirst({
-    where: eq(broadcastIds.id, broadcastId)
-  });
+  const broadcast = await getBroadcastsById(broadcastId)
   if (!broadcast) {
     return {
       success: false,

@@ -1,8 +1,3 @@
-
-import { broadcastIds } from 'videmus-database/db/schema';
-import { eq } from 'drizzle-orm';
-import { db } from 'videmus-database/db';
-
 import { mediaCodecs } from '../codecs';
 
 import sdpTransform from 'sdp-transform';
@@ -30,6 +25,7 @@ import {
   resourcesDict,
   worker,
 } from '../resources';
+import {getBroadcastsById} from './getBroadcastsById';
 
 export type PostWhipArgs = {
   resourcesId: string,
@@ -62,9 +58,7 @@ export const postWhip = async ({
   try {
     // resourceIdは配信者のIDを指しますが、
     // これで各種リソースを管理しますので、resourceIdとしています
-    const searchedEntry = await db.query.broadcastIds.findFirst({
-      where: eq(broadcastIds.id, resourcesId)
-    })
+    const searchedEntry = await getBroadcastsById(resourcesId)
     if (searchedEntry == null) {
       return {
         success: false,
@@ -190,8 +184,11 @@ export const postWhip = async ({
 
       const mediaSectionIdx = 
         remoteSdp.getNextMediaSectionIdx();
-      const offerMediaObject = 
+      const offerMediaObject =
         localSdpObject.media[mediaSectionIdx.idx];
+      if (offerMediaObject == null) {
+        throw new Error(`Media section at index ${mediaSectionIdx.idx} not found`);
+      }
       debug('offerMediaObject: ', offerMediaObject);
 
       const sendingRtpParameters: RtpParameters = { 

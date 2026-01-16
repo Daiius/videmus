@@ -1,7 +1,5 @@
 
-import { broadcastIds } from 'videmus-database/db/schema';
-import { db } from 'videmus-database/db';
-import { eq } from 'drizzle-orm';
+import { getBroadcastingStatus as getBroadcastingStatusDb } from 'videmus-database/db/lib';
 
 import type { VidemusResult } from '../types'
 import { resourcesDict } from '../resources'
@@ -24,10 +22,7 @@ export const getBroadcastingStatus = async ({
   broadcastId,
 }: GetBroadcastingStatusArgs): Promise<VidemusResult<GetBroadcastingStatusResult>> => {
 
-  const searchedEntry = await db.query.broadcastIds.findFirst({
-    where: eq(broadcastIds.id, broadcastId)
-  });
-
+  const searchedEntry = await getBroadcastingStatusDb(broadcastId)
   if (searchedEntry == null) {
     return {
       success: false,

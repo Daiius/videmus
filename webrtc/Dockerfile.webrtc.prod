@@ -12,7 +12,7 @@ COPY ./database/package.json /workspace/database/
 RUN pnpm install --filter videmus-webrtc --filter videmus-database
 
 COPY ./webrtc/src/ /workspace/webrtc/src/
-COPY ./database/db/index.ts ./database/db/schema.ts /workspace/database/db/ 
+COPY ./database/db/ /workspace/database/db/ 
 COPY ./webrtc/tsconfig.json ./webrtc/esbuild.config.ts /workspace/webrtc/
 
 RUN pnpm build
