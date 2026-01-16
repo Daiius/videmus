@@ -2,7 +2,7 @@ import {
   broadcastIds,
   channels,
 } from './db/schema';
-import { db, connection } from './db';
+import { db, client } from './db';
 import { eq } from 'drizzle-orm';
 
 if ( process.env.TEST_BROADCAST_ID == null
@@ -36,5 +36,5 @@ await db.transaction(async (tx) => {
 
 });
 
-await connection.end();
+await client.end();
 

@@ -4,12 +4,14 @@
   "private": true,
   "devDependencies": {
     "@types/node": "^24.0.7",
-    "drizzle-kit": "^0.31.4",
+    "drizzle-kit": "1.0.0-beta.11-fc31a5f",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "drizzle-orm": "0.44.2",
-    "mysql2": "3.14.1"
+    "drizzle-orm": "1.0.0-beta.11-fc31a5f",
+    "mysql2": "3.14.1",
+    "nanoid": "^5.1.5",
+    "uuid": "^11.1.0"
   }
 }
