@@ -7,14 +7,6 @@
 import clsx from 'clsx'
 import { useState } from 'react'
 
-import {
-  Description,
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle
-} from '@headlessui/react'
-
 import Panel from '@/components/Panel'
 import Button from '@/components/Button'
 import { ClipboardDocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -25,77 +17,78 @@ export type ObsBroadcastUrlPanel = {
   className?: string,
 }
 
+const CopyObsUrlButton = ({
+  obsBroadcastUrl,
+}: {
+  obsBroadcastUrl: string,
+}) => {
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+  return (
+    <Button
+      onClick={async () => {
+        await navigator.clipboard.writeText(obsBroadcastUrl);
+        setIsCopied(true);
+      }}
+    >
+      {isCopied
+        ? <ClipboardDocumentCheckIcon className='size-6' />
+        : <ClipboardDocumentIcon className='size-6' />
+      }
+    </Button>
+  );
+};
+
 const ObsBroadcastUrlPanel = ({
   obsBroadcastUrl,
   className,
 }: ObsBroadcastUrlPanel) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const modalId = 'obs-broadcast-url-modal';
   return (
     <Panel
       panelTitle={<div className='p-2'>OBS配信用URL</div>}
       inline
       className={clsx(className)}
     >
-      <Button onClick={() => setIsOpen(true)}>
-        表示
-      </Button>
-      <Dialog
-        open={isOpen} 
-        onClose={() => setIsOpen(false)}
+      <label
+        htmlFor={modalId}
         className={clsx(
-          'relative z-50',
-          'transition duration-200 ease-in-out data-[closed]:opacity-0',
+          'btn',
+          'bg-primary rounded-md',
+          'hover:bg-primary-hover',
+          'focus:border focus:border-primary-highlight',
+          'active:border active:border-primary-highlight',
+          'px-2 py-1'
         )}
-        transition
       >
-        <DialogBackdrop className='fixed inset-0 bg-black/30'/>
-        <div
-          className={clsx(
-            'fixed inset-0 flex w-screen', 
-            'items-center justify-center p-4',
-          )}
-        >
-          <DialogPanel
-            className={clsx(
-              'max-w-lg space-y-4 bg-panel p-4 rounded-md'
-            )}
-          >
-            <DialogTitle className={clsx(
-              'font-bold',
-              'flex flex-row'
-            )}>
-              <div>OBS配信用URL</div>
-              <Button 
-                className='bg-transparent ms-auto'
-                onClick={() => setIsOpen(false)}
-              >
-                <XMarkIcon className='size-6' />
-              </Button>
-            </DialogTitle>
-            <Description>
-              誤って視聴者に送信しないようご注意下さい！
-            </Description>
-            <div className='flex flex-row gap-2 items-center'>
-              <div>{obsBroadcastUrl}</div>
-              <Button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(obsBroadcastUrl);
-                  setIsCopied(true);
-                }}
-              >
-                {isCopied
-                  ? <ClipboardDocumentCheckIcon className='size-6' />
-                  : <ClipboardDocumentIcon className='size-6' />
-                }
-              </Button>
-            </div>
-          </DialogPanel>
+        表示
+      </label>
+      <input type='checkbox' id={modalId} className='modal-toggle' />
+      <div className='modal'>
+        <div className='modal-box max-w-lg space-y-4 bg-panel p-4 rounded-md'>
+          <div className={clsx(
+            'font-bold',
+            'flex flex-row'
+          )}>
+            <div>OBS配信用URL</div>
+            <label
+              htmlFor={modalId}
+              className='btn btn-ghost bg-transparent ms-auto'
+            >
+              <XMarkIcon className='size-6' />
+            </label>
+          </div>
+          <div>
+            誤って視聴者に送信しないようご注意下さい！
+          </div>
+          <div className='flex flex-row gap-2 items-center'>
+            <div>{obsBroadcastUrl}</div>
+            <CopyObsUrlButton obsBroadcastUrl={obsBroadcastUrl} />
+          </div>
         </div>
-      </Dialog>
+        <label className='modal-backdrop' htmlFor={modalId}>Close</label>
+      </div>
     </Panel>
   );
 };
 
 export default ObsBroadcastUrlPanel;
-

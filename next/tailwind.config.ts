@@ -23,6 +23,23 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require('daisyui')],
+  daisyui: {
+    themes: [
+      {
+        videmus: {
+          primary: colors.slate[600],
+          'primary-content': colors.white,
+          'base-100': colors.slate[900],
+          'base-200': colors.slate[800],
+          'base-300': colors.slate[600],
+          neutral: colors.slate[950],
+          success: colors.green[400],
+          error: colors.red[400],
+          info: colors.blue[500],
+        },
+      },
+    ],
+  },
 };
 export default config;

@@ -1,17 +1,16 @@
 import clsx from 'clsx';
 
-import { Button as HeadlessButton } from '@headlessui/react';
-
 const Button: React.FC<
-  React.ComponentProps<typeof HeadlessButton>
+  React.ComponentProps<'button'>
 > = ({
   className,
   children,
   ...props
 }) => (
-  <HeadlessButton
+  <button
     type='button'
     className={clsx(`
+       btn
        bg-primary rounded-md
        hover:bg-primary-hover
        focus:border focus:border-primary-highlight
@@ -22,8 +21,7 @@ const Button: React.FC<
     {...props}
   >
     {children}
-  </HeadlessButton>
+  </button>
 );
 
 export default Button;
-
