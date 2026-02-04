@@ -47,12 +47,12 @@ const BroadcastingStatusPanel = ({
       <div className='flex flex-row gap-2 items-center p-2'>
         <UsersIcon className='size-6' />
         {data != null
-          ? <div>{data.streamingCount}</div>
-          : <div>...</div>
+          ? <p>{data.streamingCount}</p>
+          : <p>...</p>
         }
       </div>
       {error &&
-        <div>エラー： {error.toString()}</div>
+        <p>エラー： {error.toString()}</p>
       }
     </Panel>
   )

@@ -1,5 +1,3 @@
-import clsx from 'clsx';
-
 import { notFound } from 'next/navigation';
 
 import { getBroadcastInfo } from '@/lib/broadcastIds';
@@ -37,10 +35,7 @@ const BroadcasterPage: React.FC<{
   const obsBroadcastUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${broadcastId}`;
 
   return (
-    <div className={clsx(
-      'flex flex-col gap-2',
-      'lg:px-52 md:px-12 w-full',
-    )}>
+    <article className='flex flex-col gap-2 lg:px-52 md:px-12 w-full'>
       <BroadcastIdPanel 
         broadcastId={broadcastId}
         isAvailable={isAvailable}
@@ -57,7 +52,7 @@ const BroadcasterPage: React.FC<{
         broadcastId={broadcastId}
       />
       <HelpPanel />
-    </div>
+    </article>
   );
 };
 

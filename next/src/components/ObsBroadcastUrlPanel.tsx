@@ -65,7 +65,7 @@ const ObsBroadcastUrlPanel = ({
               'font-bold',
               'flex flex-row'
             )}>
-              <div>OBS配信用URL</div>
+              <p>OBS配信用URL</p>
               <Button 
                 className='bg-transparent ms-auto'
                 onClick={() => setIsOpen(false)}
@@ -77,7 +77,7 @@ const ObsBroadcastUrlPanel = ({
               誤って視聴者に送信しないようご注意下さい！
             </Description>
             <div className='flex flex-row gap-2 items-center'>
-              <div>{obsBroadcastUrl}</div>
+              <p>{obsBroadcastUrl}</p>
               <Button
                 onClick={async () => {
                   await navigator.clipboard.writeText(obsBroadcastUrl);
