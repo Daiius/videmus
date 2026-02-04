@@ -16,21 +16,20 @@ const BroadcastIdPanel = ({
   isAvailable,
   className,
 }: BroadcastIdPanelProps) => (
-  <Panel 
-    panelTitle={<div className='p-2'>ID</div>}
+  <Panel
+    panelTitle='ID'
     inline
     className={clsx(className)}
   >
     <div className='flex gap-1 items-center min-w-0'>
-      <div className='overflow-ellipsis overflow-hidden whitespace-nowrap min-w-0'>{broadcastId}</div>
+      <p className='overflow-ellipsis overflow-hidden whitespace-nowrap min-w-0'>
+        {broadcastId}
+      </p>
       {isAvailable
-        ? <CheckCircleIcon className='size-4 text-green-400' /> 
-        : <XCircleIcon className='size-4 text-red-400' />
+        ? <CheckCircleIcon className='size-4 text-green-400' aria-hidden='true' />
+        : <XCircleIcon className='size-4 text-red-400' aria-hidden='true' />
       }
-      {isAvailable
-        ? <div>有効</div>
-        : <div>無効</div>
-      }
+      <p>{isAvailable ? '有効' : '無効' }</p>
     </div>
     {!isAvailable &&
       <div className={clsx(
@@ -38,8 +37,8 @@ const BroadcastIdPanel = ({
         'p-2',
         'border border-red-400 rounded-md',
       )}>
-        <div>管理者にID（左から5-6文字程度でも可）を伝えて下さい</div>
-        <div>手動で有効化するので、お待ち下さい....</div>
+        <p>管理者にID（左から5-6文字程度でも可）を伝えて下さい</p>
+        <p>手動で有効化するので、お待ち下さい....</p>
       </div>
     }
   </Panel>

@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='jp'>
+    <html lang='ja'>
       <body
         className={clsx(
           'bg-background antialiased w-full min-h-dvh',
@@ -24,11 +24,11 @@ export default function RootLayout({
         )}
       >
         <Header />
-        <div className={clsx(
+        <main className={clsx(
           'p-2 flex flex-col w-full items-center',
         )}>
           {children}
-        </div>
+        </main>
       </body>
     </html>
   );

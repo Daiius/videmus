@@ -7,18 +7,16 @@ import Button from '@/components/Button';
 
 export default function Home() {
   return (
-    <div className={clsx(
+    <article className={clsx(
       'flex flex-col gap-2',
       'lg:px-52 md:px-12',
     )}>
+      {/* Videmus 説明 */}
       <Panel panelTitle='Videmusについて'>
-        <div>
-          小規模・低遅延の動画配信Webアプリケーションです
-        </div>
-        <div>
-          OBSのWHIPサービスから動画配信を行えます
-        </div>
+        <p>小規模・低遅延の動画配信Webアプリケーションです</p>
+        <p>OBSのWHIPサービスから動画配信を行えます</p>
       </Panel>
+      {/* 新規配信ID発行 & 視聴方法 */}
       <div className={clsx(
         'flex flex-col',
         'md:grid md:grid-cols-2 gap-2'
@@ -31,11 +29,9 @@ export default function Home() {
           </Link>
         </Panel>
         <Panel panelTitle='視聴する'>
-          <div>
-            配信者から視聴用URLを教えてもらってアクセスしましょう
-          </div>
+          <p>配信者から視聴用URLを教えてもらってアクセスしましょう</p>
         </Panel>
       </div>
-    </div>
+    </article>
   );
 }

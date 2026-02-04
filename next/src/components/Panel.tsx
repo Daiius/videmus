@@ -15,7 +15,7 @@ const Panel = ({
   children,
   className,
 }: PanelProps) => (
-  <div 
+  <section 
     className={clsx(
       'bg-panel rounded-sm',
       inline && 'flex items-center gap-4', 
@@ -23,14 +23,12 @@ const Panel = ({
     )}
   >
     {panelTitle &&
-      <div className={clsx(
-        'text-lg font-bold', 
-      )}>
+      <h2 className='text-lg font-bold p-2'>
         {panelTitle}
-      </div>
+      </h2>
     }
     {children}
-  </div>
+  </section>
 );
 
 export default Panel;
