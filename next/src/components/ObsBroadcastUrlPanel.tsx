@@ -33,7 +33,7 @@ const ObsBroadcastUrlPanel = ({
   const [isCopied, setIsCopied] = useState<boolean>(false);
   return (
     <Panel
-      panelTitle={<div className='p-2'>OBS配信用URL</div>}
+      panelTitle='OBS配信用URL'
       inline
       className={clsx(className)}
     >
@@ -66,11 +66,12 @@ const ObsBroadcastUrlPanel = ({
               'flex flex-row'
             )}>
               <p>OBS配信用URL</p>
-              <Button 
+              <Button
                 className='bg-transparent ms-auto'
                 onClick={() => setIsOpen(false)}
+                aria-label='閉じる'
               >
-                <XMarkIcon className='size-6' />
+                <XMarkIcon className='size-6' aria-hidden='true' />
               </Button>
             </DialogTitle>
             <Description>
@@ -83,10 +84,11 @@ const ObsBroadcastUrlPanel = ({
                   await navigator.clipboard.writeText(obsBroadcastUrl);
                   setIsCopied(true);
                 }}
+                aria-label={isCopied ? 'コピー済み' : 'URLをコピー'}
               >
                 {isCopied
-                  ? <ClipboardDocumentCheckIcon className='size-6' />
-                  : <ClipboardDocumentIcon className='size-6' />
+                  ? <ClipboardDocumentCheckIcon className='size-6' aria-hidden='true' />
+                  : <ClipboardDocumentIcon className='size-6' aria-hidden='true' />
                 }
               </Button>
             </div>

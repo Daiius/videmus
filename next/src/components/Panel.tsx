@@ -23,7 +23,7 @@ const Panel = ({
     )}
   >
     {panelTitle &&
-      <h2 className='text-lg font-bold'>
+      <h2 className='text-lg font-bold p-2'>
         {panelTitle}
       </h2>
     }

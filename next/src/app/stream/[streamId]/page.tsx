@@ -11,10 +11,10 @@ const StreamPage: React.FC<{
   const { streamId } = await params;
 
   return (
-    <div className='flex flex-col gap-2'>
+    <article className='flex flex-col gap-2'>
       <WebRtcVideo streamId={streamId} />
       <StreamingStatusPanel channelId={streamId} />
-    </div>
+    </article>
   );
 };
 

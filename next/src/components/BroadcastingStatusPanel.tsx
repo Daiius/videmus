@@ -40,12 +40,12 @@ const BroadcastingStatusPanel = ({
 
   return (
     <Panel
-      panelTitle={<div className='p-2'>配信ステータス</div>}
+      panelTitle='配信ステータス'
       inline
       className={clsx(className)}
     >
       <div className='flex flex-row gap-2 items-center p-2'>
-        <UsersIcon className='size-6' />
+        <UsersIcon className='size-6' aria-hidden='true' />
         {data != null
           ? <p>{data.streamingCount}</p>
           : <p>...</p>

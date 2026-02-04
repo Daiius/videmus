@@ -19,8 +19,8 @@ const ChannelsPanel = ({
   currentChannelId,
   className,
 }: ChannelsPanelProps) => (
-  <Panel 
-    panelTitle={<div className='p-2'>配信チャンネル</div>}
+  <Panel
+    panelTitle='配信チャンネル'
     className={clsx(className)}
   >
     <ul className='flex flex-col gap-2 px-2 pb-2'>

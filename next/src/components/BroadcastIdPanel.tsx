@@ -16,8 +16,8 @@ const BroadcastIdPanel = ({
   isAvailable,
   className,
 }: BroadcastIdPanelProps) => (
-  <Panel 
-    panelTitle={<div className='p-2'>ID</div>}
+  <Panel
+    panelTitle='ID'
     inline
     className={clsx(className)}
   >
@@ -26,8 +26,8 @@ const BroadcastIdPanel = ({
         {broadcastId}
       </p>
       {isAvailable
-        ? <CheckCircleIcon className='size-4 text-green-400' /> 
-        : <XCircleIcon className='size-4 text-red-400' />
+        ? <CheckCircleIcon className='size-4 text-green-400' aria-hidden='true' />
+        : <XCircleIcon className='size-4 text-red-400' aria-hidden='true' />
       }
       <p>{isAvailable ? '有効' : '無効' }</p>
     </div>
