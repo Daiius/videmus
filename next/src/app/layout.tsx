@@ -16,10 +16,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='jp'>
+    <html
+      lang='jp'
+      className={clsx(
+        'bg-background w-screen',
+      )}
+    >
       <body
         className={clsx(
-          'bg-background antialiased w-full min-h-dvh',
+          'bg-background antialiased w-screen min-h-dvh',
           'text-foreground',
         )}
       >
@@ -33,4 +38,3 @@ export default function RootLayout({
     </html>
   );
 }
-

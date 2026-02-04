@@ -8,8 +8,7 @@ import clsx from 'clsx'
 import { useState } from 'react'
 
 import Panel from '@/components/Panel'
-import Button from '@/components/Button'
-import { ClipboardDocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 import { ClipboardDocumentCheckIcon } from '@heroicons/react/24/solid'
 
 export type ObsBroadcastUrlPanel = {
@@ -24,7 +23,9 @@ const CopyObsUrlButton = ({
 }) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   return (
-    <Button
+    <button
+      type='button'
+      className='btn btn-square'
       onClick={async () => {
         await navigator.clipboard.writeText(obsBroadcastUrl);
         setIsCopied(true);
@@ -34,7 +35,7 @@ const CopyObsUrlButton = ({
         ? <ClipboardDocumentCheckIcon className='size-6' />
         : <ClipboardDocumentIcon className='size-6' />
       }
-    </Button>
+    </button>
   );
 };
 
@@ -51,38 +52,23 @@ const ObsBroadcastUrlPanel = ({
     >
       <label
         htmlFor={modalId}
-        className={clsx(
-          'btn',
-          'bg-primary rounded-md',
-          'hover:bg-primary-hover',
-          'focus:border focus:border-primary-highlight',
-          'active:border active:border-primary-highlight',
-          'px-2 py-1'
-        )}
+        className='btn'
       >
         表示
       </label>
       <input type='checkbox' id={modalId} className='modal-toggle' />
       <div className='modal'>
-        <div className='modal-box max-w-lg space-y-4 bg-panel p-4 rounded-md'>
-          <div className={clsx(
-            'font-bold',
-            'flex flex-row'
-          )}>
-            <div>OBS配信用URL</div>
-            <label
-              htmlFor={modalId}
-              className='btn btn-ghost bg-transparent ms-auto'
-            >
-              <XMarkIcon className='size-6' />
-            </label>
-          </div>
-          <div>
-            誤って視聴者に送信しないようご注意下さい！
-          </div>
+        <div className='modal-box bg-panel'>
+          <h3 className='font-bold text-lg'>OBS配信用URL</h3>
+          <p className='py-4'>誤って視聴者に送信しないようご注意下さい！</p>
           <div className='flex flex-row gap-2 items-center'>
             <div>{obsBroadcastUrl}</div>
             <CopyObsUrlButton obsBroadcastUrl={obsBroadcastUrl} />
+          </div>
+          <div className='modal-action'>
+            <label htmlFor={modalId} className='btn'>
+              閉じる
+            </label>
           </div>
         </div>
         <label className='modal-backdrop' htmlFor={modalId}>Close</label>
