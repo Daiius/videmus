@@ -22,7 +22,7 @@ import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
 import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
-import { bearerAuth, broadcastTokenAuth } from './middlewares'
+import { bearerAuth, sessionAuth, broadcastTokenAuth } from './middlewares'
 import { authApp } from './routes/auth'
 import { setupApp } from './routes/setup'
 import { tokensApp } from './routes/tokens'
@@ -322,12 +322,15 @@ const route =
   /**
    * 新しい配信IDを無効化状態で作成します
    * 新しいチャンネルも1つデフォルト値で作成します
+   * 認証ユーザーを所有者として設定します
    */
   .post(
     '/broadcasts',
-    bearerAuth,
+    sessionAuth,
     async c => {
-      const result = await postBroadcast()
+      const session = c.get('session')
+      const ownerId = session?.user?.id
+      const result = await postBroadcast({ ownerId })
       return c.json(result, 200)
     },
   )
@@ -345,7 +348,7 @@ const route =
    */
   .get(
     '/broadcasts/:broadcastId',
-    bearerAuth,
+    sessionAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const result = await getBroadcastsById(broadcastId)
@@ -358,7 +361,7 @@ const route =
    */
   .post(
     '/broadcasts/:broadcastId/channels/current',
-    bearerAuth,
+    sessionAuth,
     zValidator(
       'json',
       z.object({ newCurrentChannelId: z.string() }),
@@ -376,7 +379,7 @@ const route =
    */
   .patch(
     '/broadcasts/:broadcastId/channels/:channelId',
-    bearerAuth,
+    sessionAuth,
     zValidator(
       'json',
       z.object({
@@ -405,7 +408,7 @@ const route =
   )
   .post(
     '/broadcasts/:broadcastId/channels',
-    bearerAuth,
+    sessionAuth,
     zValidator(
       'json',
       z.object({
@@ -430,7 +433,7 @@ const route =
   )
   .delete(
     '/broadcasts/:broadcastId/channels/:channelId',
-    bearerAuth,
+    sessionAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
       const channelId = c.req.param('channelId')

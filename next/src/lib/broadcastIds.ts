@@ -1,17 +1,46 @@
-import { clientWithAuth } from '@/lib/api'
+import { cookies } from 'next/headers'
 
-import { InferResponseType } from 'hono'
+const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ''
 
-const $get = clientWithAuth.broadcasts[':broadcastId'].$get
-type Broadcast = InferResponseType<typeof $get>
-export type Channel = Broadcast['channels'][number]
+const getCookieHeader = async () => {
+  const cookieStore = await cookies()
+  return cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ')
+}
+
+export type Channel = {
+  id: string
+  broadcastId: string
+  name: string
+  description: string
+  createdTime: string
+  requireAuth: boolean
+}
+
+export type Broadcast = {
+  id: string
+  isAvailable: boolean
+  currentChannelId: string
+  ownerId: string | null
+  channels: Channel[]
+}
 
 /**
  * 新しい配信IDを無効化状態で作成します
  * 新しいチャンネルも1つデフォルト値で作成します
+ * Cookie を転送してセッション認証で API を呼び出します
  */
 export const createNewBroadcastId = async () => {
-  const response = await clientWithAuth.broadcasts.$post()
+  const cookieHeader = await getCookieHeader()
+  const response = await fetch(`${API_URL}/broadcasts`, {
+    method: 'POST',
+    headers: {
+      Cookie: cookieHeader,
+    },
+  })
+
   if (!response.ok) {
     throw new Error(
       `新規配信ID作成時にエラーが発生しました: ${response.status} ${response.statusText}`
@@ -22,19 +51,21 @@ export const createNewBroadcastId = async () => {
 
 /**
  * 指定した配信IDの情報を取得します
- * broadcastIdはURLに指定されたものを受け取るので、
- * 存在しない値が入る場合をスムーズに扱うため、
- * その場合undefinedを返します
- *
- * currentChannelIdはデータベース制約上はnullになる可能性がありますが
- * (MySQLでdeferred constraintが使えないため妥協)
- * この関数を経由して取得するようにし、
- * TODO: どうやって強制する？？
- * ここでnullチェックと有効な値のセットを事前に行うようにします
+ * Cookie を転送してセッション認証で API を呼び出します
  */
-export const getBroadcastInfo = async (broadcastId: string)  => {
-  const response = await clientWithAuth.broadcasts[':broadcastId'].$get({ param: { broadcastId } })
+export const getBroadcastInfo = async (broadcastId: string): Promise<Broadcast | undefined> => {
+  const cookieHeader = await getCookieHeader()
+  const response = await fetch(`${API_URL}/broadcasts/${broadcastId}`, {
+    headers: {
+      Cookie: cookieHeader,
+    },
+    cache: 'no-store',
+  })
+
   if (!response.ok) {
+    if (response.status === 404) {
+      return undefined
+    }
     throw new Error(
       `配信ステータス取得時にエラーが発生しました ${response.status} ${response.statusText}`
     )
@@ -45,19 +76,26 @@ export const getBroadcastInfo = async (broadcastId: string)  => {
 
 /**
  * 配信チャンネルを変更します
+ * Cookie を転送してセッション認証で API を呼び出します
  */
 export const updateCurrentChannel = async (
   broadcastId: string,
   newCurrentChannelId: string,
 ) => {
-  const response = await clientWithAuth.broadcasts[':broadcastId'].channels.current.$post({ 
-    param: { broadcastId },
-    json: { newCurrentChannelId },
+  const cookieHeader = await getCookieHeader()
+  const response = await fetch(`${API_URL}/broadcasts/${broadcastId}/channels/current`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookieHeader,
+    },
+    body: JSON.stringify({ newCurrentChannelId }),
   })
+
   if (!response.ok) {
     throw new Error(
       `配信チャンネル変更時にエラーが発生しました ${response.status} ${response.statusText}`
     )
   }
-};
+}
 
