@@ -2,7 +2,13 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? ''
+/**
+ * クライアントサイドからのセッション取得はプロキシ経由で行う
+ * /auth/session は Next.js API Route で /api/auth/session にプロキシされる
+ *
+ * 注: 通常は SSR でセッションを取得して initialUser として渡すため、
+ * このフェッチは実行されないことが多い
+ */
 
 export type SessionUser = {
   id: string
@@ -40,7 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const fetchSession = async () => {
     try {
-      const res = await fetch(`${AUTH_URL}/auth/session`, {
+      // プロキシ経由でセッション取得（/api/auth/session → Hono /api/auth/session）
+      const res = await fetch('/api/auth/session', {
         credentials: 'include',
       })
       if (res.ok) {

@@ -7,7 +7,12 @@ import clsx from 'clsx'
 import Panel from '@/components/Panel'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
+import { signIn } from '@/lib/auth-client'
 
+/**
+ * Hono サーバーの URL（OAuth コールバック用）
+ * セットアップ完了後のコールバックは Hono サーバーで処理するため直接指定
+ */
 const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? ''
 
 type Provider = 'github' | 'google'
@@ -25,7 +30,8 @@ const SetupPage: React.FC = () => {
   useEffect(() => {
     const checkAdminExists = async () => {
       try {
-        const res = await fetch(`${AUTH_URL}/auth/check-setup`, {
+        // プロキシ経由でチェック
+        const res = await fetch('/api/setup/check-setup', {
           credentials: 'include',
         })
         const data = await res.json()
@@ -41,7 +47,8 @@ const SetupPage: React.FC = () => {
 
     const fetchProviders = async () => {
       try {
-        const res = await fetch(`${AUTH_URL}/auth/providers`, {
+        // プロキシ経由で取得
+        const res = await fetch('/api/setup/providers', {
           credentials: 'include',
         })
         const data = await res.json()
@@ -61,7 +68,8 @@ const SetupPage: React.FC = () => {
     setError(null)
 
     try {
-      const res = await fetch(`${AUTH_URL}/auth/setup/verify`, {
+      // プロキシ経由で検証
+      const res = await fetch('/api/setup/setup/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -81,9 +89,13 @@ const SetupPage: React.FC = () => {
     }
   }
 
-  const handleOAuthLogin = (provider: Provider) => {
+  const handleOAuthLogin = async (provider: Provider) => {
+    // OAuth コールバックは Hono サーバーで処理するため直接指定
     const callbackUrl = `${AUTH_URL}/auth/setup/callback`
-    window.location.href = `${AUTH_URL}/api/auth/signin/${provider}?callbackURL=${encodeURIComponent(callbackUrl)}`
+    await signIn.social({
+      provider,
+      callbackURL: callbackUrl,
+    })
   }
 
   if (checkingAdmin) {

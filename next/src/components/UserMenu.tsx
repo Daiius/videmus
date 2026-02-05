@@ -9,8 +9,6 @@ import { useAuth } from '@/components/AuthProvider'
 import Button from '@/components/Button'
 import LoginButton from '@/components/LoginButton'
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? ''
-
 type UserMenuProps = {
   className?: string
 }
@@ -22,7 +20,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ className }) => {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await fetch(`${AUTH_URL}/api/auth/sign-out`, {
+      // プロキシ経由でログアウト
+      await fetch('/api/auth/sign-out', {
         method: 'POST',
         credentials: 'include',
       })

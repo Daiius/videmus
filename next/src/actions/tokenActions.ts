@@ -1,9 +1,18 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 
 const AUTH_URL = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_AUTH_URL ?? ''
+
+const getCookieHeader = async () => {
+  const cookieStore = await cookies()
+  return cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ')
+}
 
 export type BroadcastToken = {
   id: string
@@ -25,9 +34,10 @@ export const getBroadcastTokens = async (
     throw new Error('Authentication required')
   }
 
+  const cookieHeader = await getCookieHeader()
   const res = await fetch(`${AUTH_URL}/broadcasts/${broadcastId}/tokens`, {
     headers: {
-      Cookie: `better-auth.session_token=${session.session?.token}`,
+      Cookie: cookieHeader,
     },
     cache: 'no-store',
   })
@@ -52,11 +62,12 @@ export const createBroadcastToken = async (
     throw new Error('Authentication required')
   }
 
+  const cookieHeader = await getCookieHeader()
   const res = await fetch(`${AUTH_URL}/broadcasts/${broadcastId}/tokens`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Cookie: `better-auth.session_token=${session.session?.token}`,
+      Cookie: cookieHeader,
     },
     body: JSON.stringify({ name }),
   })
@@ -82,12 +93,13 @@ export const deleteBroadcastToken = async (
     throw new Error('Authentication required')
   }
 
+  const cookieHeader = await getCookieHeader()
   const res = await fetch(
     `${AUTH_URL}/broadcasts/${broadcastId}/tokens/${tokenId}`,
     {
       method: 'DELETE',
       headers: {
-        Cookie: `better-auth.session_token=${session.session?.token}`,
+        Cookie: cookieHeader,
       },
     }
   )

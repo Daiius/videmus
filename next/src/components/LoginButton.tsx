@@ -2,8 +2,7 @@
 
 import clsx from 'clsx'
 import Button from '@/components/Button'
-
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? ''
+import { signIn } from '@/lib/auth-client'
 
 type LoginButtonProps = {
   provider?: 'github' | 'google'
@@ -18,9 +17,12 @@ const LoginButton: React.FC<LoginButtonProps> = ({
   className,
   children,
 }) => {
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const callback = callbackUrl ?? window.location.href
-    window.location.href = `${AUTH_URL}/api/auth/signin/${provider}?callbackURL=${encodeURIComponent(callback)}`
+    await signIn.social({
+      provider,
+      callbackURL: callback,
+    })
   }
 
   const providerLabels: Record<string, string> = {
