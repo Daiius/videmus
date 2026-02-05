@@ -1,1 +1,1 @@
-export { updateBroadcastsChannelsCurrent as postBroadcastChannelsCurrent } from 'videmus-database/db/lib'
+export { updateBroadcastsChannelsCurrent as postBroadcastChannelsCurrent } from 'videmus-database/lib'

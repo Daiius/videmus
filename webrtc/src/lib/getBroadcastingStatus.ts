@@ -1,5 +1,5 @@
 
-import { getBroadcastingStatus as getBroadcastingStatusDb } from 'videmus-database/db/lib';
+import { getBroadcastingStatus as getBroadcastingStatusDb } from 'videmus-database/lib';
 
 import type { VidemusResult } from '../types'
 import { resourcesDict } from '../resources'

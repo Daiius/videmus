@@ -2,6 +2,20 @@
   "name": "videmus-database",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": {
+      "import": "./db/index.ts"
+    },
+    "./schema": {
+      "import": "./db/schema.ts"
+    },
+    "./lib": {
+      "import": "./db/lib.ts"
+    },
+    "./broadcastTokens": {
+      "import": "./db/broadcastTokens.ts"
+    }
+  },
   "devDependencies": {
     "@types/node": "^24.0.7",
     "drizzle-kit": "1.0.0-beta.11-fc31a5f",

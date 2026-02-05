@@ -1,1 +1,1 @@
-export { createBroadcast as postBroadcast } from 'videmus-database/db/lib'
+export { createBroadcast as postBroadcast } from 'videmus-database/lib'

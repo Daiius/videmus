@@ -3,6 +3,8 @@ import './globals.css';
 
 import clsx from 'clsx';
 import Header from '@/components/Header';
+import { AuthProvider } from '@/components/AuthProvider';
+import { getSession } from '@/lib/session';
 
 export const metadata: Metadata = {
   title: 'Videmus Broadcast',
@@ -10,11 +12,13 @@ export const metadata: Metadata = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+
   return (
     <html lang='ja'>
       <body
@@ -23,14 +27,15 @@ export default function RootLayout({
           'text-foreground',
         )}
       >
-        <Header />
-        <main className={clsx(
-          'p-2 flex flex-col w-full items-center',
-        )}>
-          {children}
-        </main>
+        <AuthProvider initialUser={session.user}>
+          <Header />
+          <main className={clsx(
+            'p-2 flex flex-col w-full items-center',
+          )}>
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
 }
-

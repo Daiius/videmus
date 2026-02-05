@@ -24,9 +24,17 @@ export const deleteBroadcastsChannels = async ({
     )
 }
 
-export const getBroadcastingStatus = async (broadcastId: string ) => 
+export const getBroadcastingStatus = async (broadcastId: string ) =>
   await db.query.broadcastIds.findFirst({
     where: { id: broadcastId }
+  });
+
+/**
+ * チャンネルIDからチャンネル情報を取得します
+ */
+export const getChannelById = async (channelId: string) =>
+  await db.query.channels.findFirst({
+    where: { id: channelId }
   });
 
 /**
@@ -132,7 +140,11 @@ export const updateBroadcastsChannelsCurrent = async (
     .where(eq(broadcastIds.id, broadcastId));
 }
 
-export const createBroadcast = async () => {
+export type CreateBroadcastArgs = {
+  ownerId?: string;
+};
+
+export const createBroadcast = async (args?: CreateBroadcastArgs) => {
   const newBroadcastId = uuid();
   const newChannelId = nanoid();
 
@@ -143,11 +155,12 @@ export const createBroadcast = async () => {
 
     await tx.insert(broadcastIds)
       .values({
-        id: newBroadcastId, 
+        id: newBroadcastId,
         isAvailable: false,
         currentChannelId: undefined,
+        ownerId: args?.ownerId,
       });
-      
+
     await tx.insert(channels)
       .values({
         id: newChannelId,
@@ -184,7 +197,7 @@ export const updateBroadcastsChannels = async ({
 export type PatchBroadcastsChannelsArgs = {
   broadcastId: string,
   channelId: string,
-  params: { name?: string, description?: string },
+  params: { name?: string, description?: string, requireAuth?: boolean },
 }
 
 /**

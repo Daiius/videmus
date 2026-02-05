@@ -1,1 +1,1 @@
-export { getBroadcastsById } from 'videmus-database/db/lib'
+export { getBroadcastsById } from 'videmus-database/lib'

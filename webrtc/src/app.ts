@@ -22,7 +22,10 @@ import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
 import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
-import { bearerAuth } from './middlewares'
+import { bearerAuth, broadcastTokenAuth } from './middlewares'
+import { authApp } from './routes/auth'
+import { setupApp } from './routes/setup'
+import { tokensApp } from './routes/tokens'
 
 
 export const app = new Hono()
@@ -30,9 +33,19 @@ export const app = new Hono()
 const origin = process.env.CORS_ORIGINS?.split(',') ?? []
 app.use('*', cors({
   origin,
-  allowMethods: ['GET', 'POST', 'DELETE'],
+  allowMethods: ['GET', 'POST', 'DELETE', 'PATCH'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }))
+
+// BetterAuth ルート
+app.route('/', authApp)
+
+// セットアップルート
+app.route('/', setupApp)
+
+// トークン管理ルート
+app.route('/', tokensApp)
 
 const handleError = <C extends Context>(c: C, error: VidemusError) => {
   switch (error.type) {
@@ -45,10 +58,10 @@ const handleError = <C extends Context>(c: C, error: VidemusError) => {
   }
 }
 
-const route = 
+const route =
   /**
    * for OBS WHIP protocol
-   * 
+   *
    * WHIPプロトコル選択+適切なURL指定の上で、
    * OBSの配信開始ボタンを押すと最初にここにリクエストが来ます
    * bodyにSDP offer、動画や音声のフォーマットや品質の情報の提案が
@@ -59,15 +72,26 @@ const route =
    *
    * また、送信者のIDの有効/無効の確認、配信IDをキーとしてのリソース生成と
    * メモリ中への記録を行い、配信に必要なリソースを、配信が終了されるまで保持します
+   *
+   * 認証: 配信トークンによるBearer認証が必要
+   * トークンに紐付いた配信IDと、URLパラメータの配信IDが一致する必要がある
    */
   app.post(
     '/whip/:id',
+    broadcastTokenAuth,
     async c => {
       const resourcesId = c.req.param('id')
+      const validatedBroadcastId = c.get('validatedBroadcastId')
+
+      // トークンに紐付いた配信IDとURLの配信IDが一致するか確認
+      if (validatedBroadcastId !== resourcesId) {
+        return c.text('Token does not match broadcast ID', 403)
+      }
+
       const sdpOffer = await c.req.text()
 
       const result = await postWhip({ resourcesId, sdpOffer })
-      
+
       if (!result.success) {
         return handleError(c, result.error)
       }
@@ -129,7 +153,7 @@ const route =
     '/streaming-status/:channelId',
     async c => {
       const channelId = c.req.param('channelId')
-      
+
       const result = await getStreamingStatus({ channelId })
 
       if (!result.success) {
@@ -137,6 +161,27 @@ const route =
       }
 
       return c.json(result.data, 200)
+    }
+  )
+  /**
+   * チャンネル情報を取得します（認証設定確認用）
+   */
+  .get(
+    '/channels/:channelId',
+    async c => {
+      const channelId = c.req.param('channelId')
+      const { getChannelById } = await import('videmus-database/lib')
+      const channel = await getChannelById(channelId)
+
+      if (!channel) {
+        return c.json({ error: 'Channel not found' }, 404)
+      }
+
+      return c.json({
+        id: channel.id,
+        name: channel.name,
+        requireAuth: channel.requireAuth,
+      }, 200)
     }
   )
   /**
@@ -335,13 +380,16 @@ const route =
     zValidator(
       'json',
       z.object({
-        name: 
+        name:
           z.string()
           .max(254, 'channel name is too long!')
           .optional(),
         description:
           z.string()
           .max(1024, 'description is too long!')
+          .optional(),
+        requireAuth:
+          z.boolean()
           .optional(),
       }),
     ),

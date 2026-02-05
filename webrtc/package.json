@@ -16,7 +16,9 @@
   "dependencies": {
     "@hono/node-server": "^1.19.4",
     "@hono/zod-validator": "^0.7.3",
+    "better-auth": "^1.4.18",
     "debug": "^4.4.1",
+    "drizzle-orm": "1.0.0-beta.11-fc31a5f",
     "hono": "^4.9.8",
     "mediasoup": "^3.19.14",
     "mediasoup-client": "^3.18.3",

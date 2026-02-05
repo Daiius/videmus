@@ -4,9 +4,9 @@ import { clientWithAuth } from '@/lib/api';
 
 // NOTE: 注意！最新版だとどこか齟齬が出るのか、create*Schema系がエラーになる
 // 手動で対応するが、矛盾しないように注意
-const updateChannelParameterSchema = 
+const updateChannelParameterSchema =
 z.object({
-  name: 
+  name:
     z.string()
     .max(254, 'channel name is too long!')
     .optional(),
@@ -14,9 +14,12 @@ z.object({
     z.string()
     .max(1024, 'description is too long!')
     .optional(),
+  requireAuth:
+    z.boolean()
+    .optional(),
 });
 
-export type UpdateChannelParameter = 
+export type UpdateChannelParameter =
   z.infer<typeof updateChannelParameterSchema>;
 
 export const updateChannel = async (
