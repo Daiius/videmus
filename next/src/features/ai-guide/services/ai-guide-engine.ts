@@ -15,9 +15,9 @@ const GuideStepSchema = z.object({
   stepNumber: z.number().int().positive().describe('Step number (1-indexed)'),
   description: z.string().describe('Description of what the user should do'),
   action: z.enum(['click', 'input', 'navigate', 'observe']).describe('Type of action'),
-  selector: z.string().optional().describe('CSS selector for the target element'),
-  value: z.string().optional().describe('Value to input (for input action)'),
-  notes: z.string().optional().describe('Additional context or notes')
+  selector: z.string().nullable().describe('CSS selector for the target element (null if not applicable)'),
+  value: z.string().nullable().describe('Value to input for input action (null if not applicable)'),
+  notes: z.string().nullable().describe('Additional context or notes (null if none)')
 });
 
 /**
@@ -27,8 +27,8 @@ const GuideResultSchema = z.object({
   steps: z.array(GuideStepSchema).describe('List of steps to complete the goal'),
   totalSteps: z.number().int().positive().describe('Total number of steps'),
   summary: z.string().describe('Summary of what this guide accomplishes'),
-  prerequisites: z.array(z.string()).optional().describe('Prerequisites (e.g., "ログインが必要です")'),
-  warnings: z.array(z.string()).optional().describe('Warnings or important notes')
+  prerequisites: z.array(z.string()).nullable().describe('Prerequisites (null if none)'),
+  warnings: z.array(z.string()).nullable().describe('Warnings or important notes (null if none)')
 });
 
 /**
