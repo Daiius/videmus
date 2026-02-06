@@ -29,12 +29,14 @@ const ChannelNameInput = ({
   )
 
   return (
-    <Input 
+    <Input
       className={clsx(className)}
       defaultValue={channel.name}
-      onChange={async (e) => 
+      onChange={async (e) =>
         await debouncedUpdateChannel(e.target.value)
       }
+      data-testid="channel-name-input"
+      aria-label="チャンネル名"
     />
   )
 }

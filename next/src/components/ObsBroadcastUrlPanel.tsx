@@ -37,7 +37,11 @@ const ObsBroadcastUrlPanel = ({
       inline
       className={clsx(className)}
     >
-      <Button onClick={() => setIsOpen(true)}>
+      <Button
+        onClick={() => setIsOpen(true)}
+        data-testid="obs-url-show-button"
+        aria-label="OBS配信用URLを表示"
+      >
         表示
       </Button>
       <Dialog
@@ -84,6 +88,7 @@ const ObsBroadcastUrlPanel = ({
                   await navigator.clipboard.writeText(obsBroadcastUrl);
                   setIsCopied(true);
                 }}
+                data-testid="obs-url-copy-button"
                 aria-label={isCopied ? 'コピー済み' : 'URLをコピー'}
               >
                 {isCopied

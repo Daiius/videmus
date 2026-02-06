@@ -26,6 +26,8 @@ const GetNewIdButton = ({
     <Button
       className={clsx(className)}
       onClick={handleClick}
+      data-testid="broadcast-id-create-button"
+      aria-label="新規配信IDを生成"
     >
       新規配信IDを生成
     </Button>

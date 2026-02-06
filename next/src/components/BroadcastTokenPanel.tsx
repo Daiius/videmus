@@ -113,10 +113,14 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
             value={newTokenName}
             onChange={(e) => setNewTokenName(e.target.value)}
             className='flex-1'
+            data-testid="token-name-input"
+            aria-label="トークン名"
           />
           <Button
             onClick={handleCreate}
             disabled={isCreating || !newTokenName.trim()}
+            data-testid="token-create-button"
+            aria-label="トークンを作成"
           >
             <PlusIcon className='size-5' />
             作成

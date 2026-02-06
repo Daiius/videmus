@@ -9,10 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.25",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
+    "ai": "^6.0.73",
     "better-auth": "^1.4.18",
     "clsx": "^2.1.1",
+    "driver.js": "^1.4.0",
     "hono": "^4.9.8",
     "mediasoup-client": "^3.12.2",
     "nanoid": "^5.1.5",

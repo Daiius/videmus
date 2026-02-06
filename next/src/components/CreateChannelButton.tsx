@@ -37,6 +37,8 @@ const CreateChannelButton = ({
         className,
       )}
       onClick={handleClick}
+      data-testid="channel-create-button"
+      aria-label="チャンネルを追加"
     >
       <PlusIcon className='size-5' />
       チャンネルの追加
