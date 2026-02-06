@@ -48,6 +48,7 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 5, // 5 minutes
+      strategy: 'jwe', // 完全暗号化（読み取り不可）
     },
   },
   advanced: {
@@ -56,6 +57,7 @@ export const auth = betterAuth({
       domain: process.env.AUTH_COOKIE_DOMAIN,
     },
     defaultCookieAttributes: {
+      httpOnly: true, // JavaScript からのアクセスを防ぐ
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     },

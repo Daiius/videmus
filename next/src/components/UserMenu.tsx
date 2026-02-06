@@ -1,12 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import clsx from 'clsx'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { UserCircleIcon, ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline'
 
 import { useAuth } from '@/components/AuthProvider'
-import Button from '@/components/Button'
 import LoginButton from '@/components/LoginButton'
 
 type UserMenuProps = {
@@ -15,21 +13,6 @@ type UserMenuProps = {
 
 const UserMenu: React.FC<UserMenuProps> = ({ className }) => {
   const { user, isLoading } = useAuth()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true)
-    try {
-      // プロキシ経由でログアウト
-      await fetch('/api/auth/sign-out', {
-        method: 'POST',
-        credentials: 'include',
-      })
-      window.location.reload()
-    } catch {
-      setIsLoggingOut(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -74,18 +57,18 @@ const UserMenu: React.FC<UserMenuProps> = ({ className }) => {
           {user.email}
         </div>
         <MenuItem>
-          <Button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+          <a
+            href="/auth/cleanup"
             className={clsx(
               'w-full flex items-center gap-2 px-4 py-2 text-sm',
               'bg-transparent hover:bg-gray-100',
-              'data-[focus]:bg-gray-100'
+              'data-[focus]:bg-gray-100',
+              'no-underline text-inherit'
             )}
           >
             <ArrowRightStartOnRectangleIcon className='w-4 h-4' />
-            {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
-          </Button>
+            ログアウト
+          </a>
         </MenuItem>
       </MenuItems>
     </Menu>
