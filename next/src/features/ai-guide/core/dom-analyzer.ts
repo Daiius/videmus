@@ -26,12 +26,15 @@ export function analyzePage(): AccessibilityTreeSnapshot {
   const nodes: AccessibilityNode[] = [];
   const nodeCount = { current: 0 };
 
-  // Start from body element
+  // Start from body's children (skip body itself)
   const body = document.body;
   if (body) {
-    const rootNode = traverseDOM(body, 0, nodeCount);
-    if (rootNode) {
-      nodes.push(rootNode);
+    const children = Array.from(body.children);
+    for (const child of children) {
+      const childNode = traverseDOM(child, 0, nodeCount);
+      if (childNode) {
+        nodes.push(childNode);
+      }
     }
   }
 

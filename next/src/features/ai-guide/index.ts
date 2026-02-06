@@ -3,7 +3,7 @@
  */
 
 // Components
-export { AIGuideButton } from './components/AIGuideButton';
+export { AIGuideSearchBar } from './components/AIGuideSearchBar';
 
 // Types (for consumers who need them)
 export type {

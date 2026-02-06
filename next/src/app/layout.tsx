@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import Header from '@/components/Header';
 import { AuthProvider } from '@/components/AuthProvider';
 import { getSession } from '@/lib/session';
-import { AIGuideButton } from '@/features/ai-guide';
 
 export const metadata: Metadata = {
   title: 'Videmus Broadcast',
@@ -29,15 +28,12 @@ export default async function RootLayout({
         )}
       >
         <AuthProvider initialUser={session.user}>
-          <Header />
+          <Header user={session.user} />
           <main className={clsx(
             'p-2 flex flex-col w-full items-center',
           )}>
             {children}
           </main>
-
-          {/* AI Guide Button - only for authenticated users */}
-          {session.user && <AIGuideButton />}
         </AuthProvider>
       </body>
     </html>
