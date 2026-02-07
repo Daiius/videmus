@@ -140,6 +140,22 @@ export const updateBroadcastsChannelsCurrent = async (
     .where(eq(broadcastIds.id, broadcastId));
 }
 
+/**
+ * ユーザーの配信IDを取得、なければ作成して返す
+ */
+export const getOrCreateBroadcastForUser = async (ownerId: string) => {
+  const existing = await db.query.broadcastIds.findFirst({
+    where: { ownerId },
+  });
+
+  if (existing) {
+    return { broadcastId: existing.id };
+  }
+
+  const result = await createBroadcast({ ownerId });
+  return { broadcastId: result.newBroadcastId };
+};
+
 export type CreateBroadcastArgs = {
   ownerId?: string;
 };
@@ -156,7 +172,6 @@ export const createBroadcast = async (args?: CreateBroadcastArgs) => {
     await tx.insert(broadcastIds)
       .values({
         id: newBroadcastId,
-        isAvailable: false,
         currentChannelId: undefined,
         ownerId: args?.ownerId,
       });

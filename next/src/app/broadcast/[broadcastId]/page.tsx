@@ -83,14 +83,14 @@ const BroadcasterPage: React.FC<{
     );
   }
 
-  const { isAvailable, channels, currentChannelId } = broadcastInfo;
+  const { isApproved, channels, currentChannelId } = broadcastInfo;
   const obsBroadcastUrl = `${process.env.NEXT_PUBLIC_API_URL}/whip/${broadcastId}`;
 
   return (
     <article className='flex flex-col gap-2 lg:px-52 md:px-12 w-full'>
       <BroadcastIdPanel
         broadcastId={broadcastId}
-        isAvailable={isAvailable}
+        isApproved={isApproved}
       />
       <ObsBroadcastUrlPanel
         obsBroadcastUrl={obsBroadcastUrl}

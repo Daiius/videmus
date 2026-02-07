@@ -1,14 +1,4 @@
-import { cookies } from 'next/headers'
-
-const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ''
-
-const getCookieHeader = async () => {
-  const cookieStore = await cookies()
-  return cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ')
-}
+import { serverClient } from './api'
 
 export type Channel = {
   id: string
@@ -21,29 +11,23 @@ export type Channel = {
 
 export type Broadcast = {
   id: string
-  isAvailable: boolean
+  isApproved: boolean
   currentChannelId: string
   ownerId: string | null
   channels: Channel[]
 }
 
 /**
- * 新しい配信IDを無効化状態で作成します
- * 新しいチャンネルも1つデフォルト値で作成します
+ * ログインユーザーの配信IDを取得（なければ自動作成）
  * Cookie を転送してセッション認証で API を呼び出します
  */
-export const createNewBroadcastId = async () => {
-  const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/broadcasts`, {
-    method: 'POST',
-    headers: {
-      Cookie: cookieHeader,
-    },
-  })
+export const getMyBroadcast = async (): Promise<{ broadcastId: string }> => {
+  const client = await serverClient()
+  const response = await client.broadcasts.mine.$get()
 
   if (!response.ok) {
     throw new Error(
-      `新規配信ID作成時にエラーが発生しました: ${response.status} ${response.statusText}`
+      `配信ID取得時にエラーが発生しました: ${response.status} ${response.statusText}`
     )
   }
   return await response.json()
@@ -54,12 +38,9 @@ export const createNewBroadcastId = async () => {
  * Cookie を転送してセッション認証で API を呼び出します
  */
 export const getBroadcastInfo = async (broadcastId: string): Promise<Broadcast | undefined> => {
-  const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/broadcasts/${broadcastId}`, {
-    headers: {
-      Cookie: cookieHeader,
-    },
-    cache: 'no-store',
+  const client = await serverClient()
+  const response = await client.broadcasts[':broadcastId'].$get({
+    param: { broadcastId },
   })
 
   if (!response.ok) {
@@ -82,14 +63,10 @@ export const updateCurrentChannel = async (
   broadcastId: string,
   newCurrentChannelId: string,
 ) => {
-  const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/broadcasts/${broadcastId}/channels/current`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-    },
-    body: JSON.stringify({ newCurrentChannelId }),
+  const client = await serverClient()
+  const response = await client.broadcasts[':broadcastId'].channels.current.$post({
+    param: { broadcastId },
+    json: { newCurrentChannelId },
   })
 
   if (!response.ok) {
@@ -98,4 +75,3 @@ export const updateCurrentChannel = async (
     )
   }
 }
-

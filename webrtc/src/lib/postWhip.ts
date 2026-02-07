@@ -26,6 +26,7 @@ import {
   worker,
 } from '../resources';
 import {getBroadcastsById} from './getBroadcastsById';
+import { getUserById } from 'videmus-database/admin';
 
 export type PostWhipArgs = {
   resourcesId: string,
@@ -68,14 +69,15 @@ export const postWhip = async ({
         },
       } ;
     }
-    if (!searchedEntry.isAvailable) {
+    const owner = await getUserById(searchedEntry.ownerId!)
+    if (!owner?.isApproved && !owner?.isAdmin) {
       return {
         success: false,
         error: {
           type: "NotAvailable",
-          message: `resources with id ${resourcesId} is not avaliable yet`,
+          message: `resources with id ${resourcesId} is not available yet`,
         },
-      } 
+      }
     }
     const currentChannelId = searchedEntry.currentChannelId;
     if (currentChannelId == null) {

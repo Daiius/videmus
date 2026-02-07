@@ -18,6 +18,7 @@ export const user = mysqlTable('user', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   isAdmin: boolean('is_admin').notNull().default(false),
+  isApproved: boolean('is_approved').notNull().default(false),
 })
 
 /**
@@ -72,7 +73,8 @@ export const verification = mysqlTable('verification', {
 /**
  * 配信IDテーブル
  *
- * 配信用のIDと有効/無効のフラグ、現在のチャンネルを組で管理します
+ * 配信用のIDと現在のチャンネルを組で管理します
+ * 有効/無効はユーザーの承認状態（user.isApproved）で判定します
  */
 export const broadcastIds = mysqlTable(
   'BroadcastIds',
@@ -81,9 +83,6 @@ export const broadcastIds = mysqlTable(
       varchar('id', { length: 36 })
         .notNull()
         .primaryKey(),
-    isAvailable:
-      boolean('is_available')
-        .notNull(),
     currentChannelId:
       varchar('current_channel_id', { length: 21 }),
         // 循環参照のためコメントアウト
