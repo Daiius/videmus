@@ -15,10 +15,11 @@ export function sanitizeInput(input: string): string {
 
 /**
  * Generate a stable CSS selector for an element
- * Priority: data-testid > id > unique class > tag + nth-child
+ * Priority: data-testid > id > aria-label+tag > role+name > parent-relative path
+ * Avoids nth-child selectors which are fragile and break easily
  */
 export function generateSelector(element: Element): string {
-  // Priority 1: data-testid
+  // Priority 1: data-testid (most stable)
   const testId = element.getAttribute('data-testid');
   if (testId) {
     return `[data-testid="${testId}"]`;
@@ -30,24 +31,78 @@ export function generateSelector(element: Element): string {
     return `#${id}`;
   }
 
-  // Priority 3: Unique class
-  const classes = Array.from(element.classList);
-  if (classes.length > 0) {
-    const classSelector = `.${classes.join('.')}`;
-    if (document.querySelectorAll(classSelector).length === 1) {
-      return classSelector;
+  // Priority 3: aria-label + tag
+  const ariaLabel = element.getAttribute('aria-label');
+  if (ariaLabel) {
+    const tagName = element.tagName.toLowerCase();
+    const selector = `${tagName}[aria-label="${ariaLabel}"]`;
+    if (document.querySelectorAll(selector).length === 1) {
+      return selector;
     }
   }
 
-  // Priority 4: Tag + nth-child
-  const parent = element.parentElement;
-  if (parent) {
-    const siblings = Array.from(parent.children);
-    const index = siblings.indexOf(element) + 1;
-    const tagName = element.tagName.toLowerCase();
-    return `${tagName}:nth-child(${index})`;
+  // Priority 4: role + unique text
+  const role = element.getAttribute('role');
+  if (role) {
+    const name = extractAccessibleName(element);
+    if (name) {
+      const selector = `[role="${role}"]`;
+      // Check if role alone is unique
+      if (document.querySelectorAll(selector).length === 1) {
+        return selector;
+      }
+    }
   }
 
+  // Priority 5: Build stable path from nearest identifiable ancestor
+  return buildStablePathSelector(element);
+}
+
+/**
+ * Build a selector path from the nearest identifiable ancestor
+ * Avoids nth-child by using tag + attributes to narrow down
+ */
+function buildStablePathSelector(element: Element): string {
+  const parts: string[] = [];
+  let current: Element | null = element;
+
+  while (current && current !== document.body) {
+    const testId = current.getAttribute('data-testid');
+    if (testId) {
+      parts.unshift(`[data-testid="${testId}"]`);
+      break;
+    }
+
+    const id = current.id;
+    if (id) {
+      parts.unshift(`#${id}`);
+      break;
+    }
+
+    const tagName = current.tagName.toLowerCase();
+    const ariaLabel = current.getAttribute('aria-label');
+    if (ariaLabel) {
+      parts.unshift(`${tagName}[aria-label="${ariaLabel}"]`);
+      break;
+    }
+
+    // Use tag name only (no nth-child)
+    parts.unshift(tagName);
+    current = current.parentElement;
+  }
+
+  const selector = parts.join(' > ');
+
+  // Verify the selector matches uniquely
+  try {
+    if (document.querySelectorAll(selector).length === 1) {
+      return selector;
+    }
+  } catch {
+    // Invalid selector
+  }
+
+  // Fallback: just the tag name
   return element.tagName.toLowerCase();
 }
 

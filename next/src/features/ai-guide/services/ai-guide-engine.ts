@@ -72,6 +72,20 @@ export function validateGuide(guide: GuideResult): boolean {
     if ((step.action === 'click' || step.action === 'input') && !step.selector) {
       return false;
     }
+
+    // Warn about unstable nth-child selectors (but don't reject)
+    if (step.selector && step.selector.includes(':nth-child')) {
+      console.warn(
+        `Step ${step.stepNumber} uses nth-child selector which may be unstable: ${step.selector}`
+      );
+    }
+  }
+
+  // Validate step numbering is sequential
+  for (let i = 0; i < guide.steps.length; i++) {
+    if (guide.steps[i].stepNumber !== i + 1) {
+      console.warn(`Step numbering is not sequential at index ${i}`);
+    }
   }
 
   return true;

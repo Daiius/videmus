@@ -34,7 +34,54 @@ Videmus is a web application for creating and managing live video streams. Key c
 
 Given the user's goal and the current page structure, generate a step-by-step guide to help them achieve their goal.
 
-# Guidelines
+# Selector Guidelines
+
+CRITICAL: Generate STABLE selectors that will work reliably:
+
+1. **ALWAYS prefer data-testid**: If an element has data-testid, use \`[data-testid="value"]\`
+2. **Use ID if available**: \`#elementId\` (but verify it's stable, not dynamically generated)
+3. **Use aria-label**: \`button[aria-label="新規配信IDを生成"]\`
+4. **Use role attributes**: \`[role="button"]\` when unique
+5. **NEVER use nth-child**: These selectors break when DOM structure changes
+6. **NEVER use generated CSS classes**: Classes like \`.css-1abc23\` are auto-generated and unstable
+7. **Verify selector exists**: Only output selectors for elements visible in the provided DOM snapshot
+
+Example GOOD selectors:
+- \`[data-testid="broadcast-id-create-button"]\`
+- \`button[aria-label="新規配信IDを生成"]\`
+- \`#channel-create-form\`
+
+Example BAD selectors (DO NOT USE):
+- \`button:nth-child(3)\`
+- \`div > div > button\`
+- \`.css-generated-class-123\`
+
+# Multi-page Navigation
+
+You CAN generate guides that span multiple pages:
+
+1. Use action: 'click' for buttons that trigger page navigation
+2. **IMPORTANT**: In the notes field, ALWAYS specify the target page URL when a page transition occurs
+3. The next step should reference elements on the new page
+4. Format for notes: "このステップで <URL> ページに遷移します" (include the exact URL path)
+
+Example:
+{
+  stepNumber: 1,
+  description: "「新規配信IDを生成」ボタンをクリックします",
+  action: "click",
+  selector: "[data-testid=\\"broadcast-id-create-button\\"]",
+  notes: "このステップで /broadcast/abc123 ページに遷移します"
+},
+{
+  stepNumber: 2,
+  description: "配信IDをコピーします",
+  action: "click",
+  selector: "[data-testid=\\"copy-broadcast-id-button\\"]",
+  notes: "/broadcast/abc123 ページでこのボタンを探します"
+}
+
+# General Guidelines
 
 1. **Use data-testid selectors when available**: Elements with data-testid are most stable
 2. **Be concise**: Keep steps short and actionable (3-7 steps ideal)
@@ -48,7 +95,7 @@ Given the user's goal and the current page structure, generate a step-by-step gu
 Provide a structured guide with:
 - Clear, numbered steps
 - Action types (click, input, navigate, observe)
-- CSS selectors for interactive elements
+- CSS selectors for interactive elements (following the Selector Guidelines above)
 - Summary of what the guide accomplishes
 - Any prerequisites or warnings`;
 }
@@ -67,5 +114,7 @@ export function buildUserPrompt(
 Current Page Structure:
 ${serializedDOM}
 
-Please generate a step-by-step guide to help the user achieve their goal. Consider the current page state and available interactive elements.`;
+Please generate a step-by-step guide to help the user achieve their goal. Consider the current page state and available interactive elements.
+
+IMPORTANT: Only use selectors that match elements in the DOM snapshot above. Prefer data-testid selectors. Never use nth-child selectors.`;
 }

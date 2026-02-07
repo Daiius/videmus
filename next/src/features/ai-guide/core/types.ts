@@ -84,4 +84,8 @@ export type AIGuideState = {
   error: string | null;
   /** Current step being highlighted (0-indexed) */
   currentStepIndex?: number;
+  /** User's goal text */
+  userGoal?: string;
+  /** Whether visual guidance (Driver.js) is active */
+  isGuidanceActive?: boolean;
 };

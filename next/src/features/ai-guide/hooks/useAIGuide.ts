@@ -1,24 +1,63 @@
 /**
  * React Hook for AI Guide state management
+ * Supports sessionStorage persistence for cross-page navigation
  */
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { AIGuideState } from '../core/types';
 import { analyzePage } from '../core/dom-analyzer';
 import { generateGuide } from '../actions/guideActions';
+import { saveGuideState, loadGuideState, clearGuideState } from '../core/storage';
+
+const initialState: AIGuideState = {
+  isLoading: false,
+  guide: null,
+  error: null,
+  currentStepIndex: undefined,
+  userGoal: '',
+  isGuidanceActive: false
+};
 
 /**
- * Hook for managing AI Guide state
+ * Hook for managing AI Guide state with sessionStorage persistence
  */
 export function useAIGuide() {
-  const [state, setState] = useState<AIGuideState>({
-    isLoading: false,
-    guide: null,
-    error: null,
-    currentStepIndex: undefined
+  const [state, setState] = useState<AIGuideState>(() => {
+    // SSR guard: don't access sessionStorage on server
+    if (typeof window === 'undefined') return initialState;
+
+    const persisted = loadGuideState();
+    if (persisted) {
+      return {
+        isLoading: false,
+        guide: persisted.guide,
+        error: null,
+        currentStepIndex: persisted.currentStepIndex,
+        userGoal: persisted.userGoal,
+        isGuidanceActive: persisted.isGuidanceActive
+      };
+    }
+    return initialState;
   });
+
+  // Persist state to sessionStorage when guide-related state changes
+  useEffect(() => {
+    if (state.guide) {
+      saveGuideState({
+        guide: state.guide,
+        currentStepIndex: state.currentStepIndex ?? 0,
+        userGoal: state.userGoal ?? '',
+        isGuidanceActive: state.isGuidanceActive ?? false,
+        startUrl: window.location.href,
+        timestamp: Date.now()
+      });
+    } else {
+      // Clear storage when guide is cleared
+      clearGuideState();
+    }
+  }, [state.guide, state.currentStepIndex, state.userGoal, state.isGuidanceActive]);
 
   /**
    * Request a guide based on user goal
@@ -27,7 +66,8 @@ export function useAIGuide() {
     setState(prev => ({
       ...prev,
       isLoading: true,
-      error: null
+      error: null,
+      userGoal
     }));
 
     try {
@@ -38,25 +78,28 @@ export function useAIGuide() {
       const result = await generateGuide(userGoal, domSnapshot);
 
       if (result.success) {
-        setState({
+        setState(prev => ({
+          ...prev,
           isLoading: false,
           guide: result.guide,
           error: null,
-          currentStepIndex: 0 // Start at first step
-        });
+          currentStepIndex: 0
+        }));
       } else {
-        setState({
+        setState(prev => ({
+          ...prev,
           isLoading: false,
           guide: null,
           error: result.error.message
-        });
+        }));
       }
     } catch (error) {
-      setState({
+      setState(prev => ({
+        ...prev,
         isLoading: false,
         guide: null,
         error: error instanceof Error ? error.message : 'エラーが発生しました'
-      });
+      }));
     }
   }, []);
 
@@ -64,12 +107,8 @@ export function useAIGuide() {
    * Clear the current guide
    */
   const clearGuide = useCallback(() => {
-    setState({
-      isLoading: false,
-      guide: null,
-      error: null,
-      currentStepIndex: undefined
-    });
+    setState(initialState);
+    clearGuideState();
   }, []);
 
   /**
@@ -134,12 +173,28 @@ export function useAIGuide() {
     });
   }, []);
 
+  /**
+   * Set user goal text
+   */
+  const setUserGoal = useCallback((userGoal: string) => {
+    setState(prev => ({ ...prev, userGoal }));
+  }, []);
+
+  /**
+   * Set guidance active state
+   */
+  const setIsGuidanceActive = useCallback((isGuidanceActive: boolean) => {
+    setState(prev => ({ ...prev, isGuidanceActive }));
+  }, []);
+
   return {
     ...state,
     requestGuide,
     clearGuide,
     nextStep,
     previousStep,
-    goToStep
+    goToStep,
+    setUserGoal,
+    setIsGuidanceActive
   };
 }

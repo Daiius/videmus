@@ -4,7 +4,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
@@ -15,20 +14,22 @@ import { GuidanceRenderer } from './GuidanceRenderer';
 
 /**
  * Search bar component for AI Guide in header
+ * State is managed centrally in useAIGuide and persisted to sessionStorage
  */
 export function AIGuideSearchBar() {
-  const [userGoal, setUserGoal] = useState('');
-  const [isGuidanceActive, setIsGuidanceActive] = useState(false);
-
   const {
     isLoading,
     error,
     guide,
     currentStepIndex,
+    userGoal,
+    isGuidanceActive,
     requestGuide,
     clearGuide,
     nextStep,
-    previousStep
+    previousStep,
+    setUserGoal,
+    setIsGuidanceActive
   } = useAIGuide();
 
   const handleRequestGuide = async (goal: string) => {
@@ -44,12 +45,11 @@ export function AIGuideSearchBar() {
   const handleCompleteGuide = () => {
     setIsGuidanceActive(false);
     clearGuide();
-    setUserGoal('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && userGoal.trim()) {
-      handleRequestGuide(userGoal.trim());
+    if (e.key === 'Enter' && (userGoal ?? '').trim()) {
+      handleRequestGuide((userGoal ?? '').trim());
     }
   };
 
@@ -73,7 +73,7 @@ export function AIGuideSearchBar() {
             >
               <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <input
-                value={userGoal}
+                value={userGoal ?? ''}
                 onChange={(e) => setUserGoal(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="何をしたいですか？"
