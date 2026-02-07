@@ -14,6 +14,41 @@ export function sanitizeInput(input: string): string {
 }
 
 /**
+ * Mask sensitive information in text content
+ * Detects and masks potential tokens, API keys, and other credentials
+ */
+export function maskSensitiveData(text: string): string {
+  if (!text) {
+    return text;
+  }
+
+  let masked = text;
+
+  // Pattern 1: OpenAI API keys (sk-...)
+  masked = masked.replace(/sk-[a-zA-Z0-9]{20,}/g, '[MASKED_API_KEY]');
+
+  // Pattern 2: JWT tokens (long base64 strings with dots)
+  masked = masked.replace(/eyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/g, '[MASKED_TOKEN]');
+
+  // Pattern 3: Generic long alphanumeric strings (potential tokens/secrets)
+  // Only mask if 32+ characters and looks like a token (high entropy)
+  masked = masked.replace(/\b[a-zA-Z0-9]{32,}\b/g, (match) => {
+    // Check if it looks like a random token (has both letters and numbers)
+    const hasLetters = /[a-zA-Z]/.test(match);
+    const hasNumbers = /[0-9]/.test(match);
+    if (hasLetters && hasNumbers) {
+      return '[MASKED_TOKEN]';
+    }
+    return match;
+  });
+
+  // Pattern 4: Common secret prefixes
+  masked = masked.replace(/\b(api[_-]?key|secret|token|password|auth)[:\s=]+[a-zA-Z0-9_-]{16,}/gi, '[MASKED_CREDENTIAL]');
+
+  return masked;
+}
+
+/**
  * Generate a stable CSS selector for an element
  * Priority: data-testid > id > aria-label+tag > role+name > parent-relative path
  * Avoids nth-child selectors which are fragile and break easily
@@ -109,12 +144,16 @@ function buildStablePathSelector(element: Element): string {
 /**
  * Extract accessible name from an element
  * Following ARIA spec: aria-label > aria-labelledby > text content
+ * Masks sensitive information before returning
  */
 export function extractAccessibleName(element: Element): string {
+  let name = '';
+
   // Check aria-label
   const ariaLabel = element.getAttribute('aria-label');
   if (ariaLabel) {
-    return ariaLabel.trim();
+    name = ariaLabel.trim();
+    return maskSensitiveData(name);
   }
 
   // Check aria-labelledby
@@ -122,21 +161,22 @@ export function extractAccessibleName(element: Element): string {
   if (labelledBy) {
     const labelElement = document.getElementById(labelledBy);
     if (labelElement) {
-      return labelElement.textContent?.trim() || '';
+      name = labelElement.textContent?.trim() || '';
+      return maskSensitiveData(name);
     }
   }
 
   // For buttons and links, use text content
   const textContent = element.textContent?.trim() || '';
   if (textContent.length > 0 && textContent.length <= 100) {
-    return textContent;
+    return maskSensitiveData(textContent);
   }
 
   // For inputs, use placeholder or label
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const placeholder = element.placeholder;
     if (placeholder) {
-      return placeholder;
+      return maskSensitiveData(placeholder);
     }
 
     // Find associated label
@@ -144,7 +184,8 @@ export function extractAccessibleName(element: Element): string {
     if (id) {
       const label = document.querySelector(`label[for="${id}"]`);
       if (label) {
-        return label.textContent?.trim() || '';
+        name = label.textContent?.trim() || '';
+        return maskSensitiveData(name);
       }
     }
   }
