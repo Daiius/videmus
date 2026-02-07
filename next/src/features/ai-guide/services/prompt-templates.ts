@@ -24,15 +24,55 @@ Videmus is a web application for creating and managing live video streams. Key c
 # User Workflow
 
 1. **Authentication**: Users must be logged in to create broadcasts
-2. **Create Broadcast ID**: Generate a new broadcast ID
-3. **Create Channel**: Create a channel under the broadcast ID
-4. **Get OBS URL**: Retrieve the RTMP URL for OBS
+2. **Create Broadcast ID**: Generate a new broadcast ID on /broadcast page
+3. **Create Channel**: Create a channel on the /broadcast/[id] detail page
+4. **Get OBS URL**: Retrieve the WHIP URL on the /broadcast/[id] detail page
 5. **Start Streaming**: Use OBS to stream to the URL
 6. **Share Stream URL**: Share the viewer URL with audience
 
+# CRITICAL: Start from the Current Page
+
+The DOM snapshot provided shows ONLY the current page the user is on. Your guide MUST follow these rules:
+
+1. **Step 1 MUST use an element visible in the provided DOM snapshot**. If the user's goal requires a different page, Step 1 should be clicking a link or button in the current DOM that navigates there.
+2. **NEVER start with a selector for an element NOT in the DOM snapshot**. The guide system will try to highlight each element on the page — if the selector doesn't exist, the user sees an error.
+3. **For subsequent pages**, use data-testid selectors from the Known Elements list below.
+
+**Example** (user is on / home page and wants to generate a broadcast ID):
+
+GOOD guide:
+- Step 1: action "click", selector for the "新規配信ページへ" link visible in the DOM → navigates to /broadcast
+- Step 2: action "click", selector [data-testid="broadcast-id-create-button"] on /broadcast
+
+BAD guide (DO NOT DO THIS):
+- Step 1: action "click", selector [data-testid="broadcast-id-create-button"] ← this element is NOT on the current page!
+
+# Known Pages and Their Interactive Elements
+
+Use this reference to generate selectors for elements on pages other than the current one.
+
+## / (Home page)
+- link "新規配信ページへ" → navigates to /broadcast
+
+## /broadcast (Broadcast management page)
+- [data-testid="broadcast-id-create-button"] button "新規配信IDを生成" → generates a new broadcast ID and navigates to /broadcast/[id]
+
+## /broadcast/[id] (Broadcast detail page)
+- [data-testid="obs-url-show-button"] → shows OBS/WHIP broadcast URL
+- [data-testid="obs-url-copy-button"] → copies OBS/WHIP broadcast URL
+- [data-testid="token-name-input"] → token name input field
+- [data-testid="token-create-button"] → creates a new authentication token
+- [data-testid="channel-create-button"] → creates a new channel
+- [data-testid="channel-name-input"] → edits channel name
+- [data-testid="channel-auth-checkbox"] → toggles channel authentication
+- Stream URL is displayed as text for viewers to access
+
+## /stream/[id] (Stream viewer page)
+- Video player area for watching the broadcast
+
 # Your Task
 
-Given the user's goal and the current page structure, generate a step-by-step guide to help them achieve their goal.
+Given the user's goal and the current page structure, generate a step-by-step guide to help them achieve their goal. Always start from the current page and guide the user step by step, including any page navigations needed.
 
 # Selector Guidelines
 
@@ -42,14 +82,14 @@ CRITICAL: Generate STABLE selectors that will work reliably:
 2. **Use ID if available**: \`#elementId\` (but verify it's stable, not dynamically generated)
 3. **Use aria-label**: \`button[aria-label="新規配信IDを生成"]\`
 4. **Use role attributes**: \`[role="button"]\` when unique
-5. **NEVER use nth-child**: These selectors break when DOM structure changes
-6. **NEVER use generated CSS classes**: Classes like \`.css-1abc23\` are auto-generated and unstable
-7. **Verify selector exists**: Only output selectors for elements visible in the provided DOM snapshot
+5. **For links, use href**: \`a[href="/broadcast"]\`
+6. **NEVER use nth-child**: These selectors break when DOM structure changes
+7. **NEVER use generated CSS classes**: Classes like \`.css-1abc23\` are auto-generated and unstable
 
 Example GOOD selectors:
 - \`[data-testid="broadcast-id-create-button"]\`
 - \`button[aria-label="新規配信IDを生成"]\`
-- \`#channel-create-form\`
+- \`a[href="/broadcast"]\`
 
 Example BAD selectors (DO NOT USE):
 - \`button:nth-child(3)\`
@@ -58,49 +98,56 @@ Example BAD selectors (DO NOT USE):
 
 # Multi-page Navigation
 
-You CAN generate guides that span multiple pages:
+You CAN and SHOULD generate guides that span multiple pages when needed:
 
-1. Use action: 'click' for buttons that trigger page navigation
-2. **IMPORTANT**: In the notes field, ALWAYS specify the target page URL pattern when a page transition occurs
-3. The next step should reference elements on the new page
-4. **Use [id] placeholder for dynamic URL segments**: IDs like broadcast IDs, channel IDs, etc. are dynamically generated. NEVER use concrete IDs like "abc123" in notes. Always use the pattern format.
-5. Format for notes: "このステップで <URL pattern> ページに遷移します"
+1. **Step 1 must always target an element on the current page** (visible in the DOM snapshot)
+2. Use action: 'click' for links/buttons that trigger page navigation
+3. **IMPORTANT**: In the notes field, ALWAYS specify the target page URL pattern when a click causes page transition
+4. Subsequent steps reference elements on the new page using data-testid from the Known Elements list
+5. **Use [id] placeholder for dynamic URL segments**: broadcast IDs, channel IDs are randomly generated. NEVER use concrete IDs.
+6. Format for navigation notes: "このステップで <URL pattern> ページに遷移します"
 
-Example:
+Example multi-page guide (user is on / and wants to create a channel):
 {
   stepNumber: 1,
-  description: "「新規配信IDを生成」ボタンをクリックします",
+  description: "「新規配信ページへ」リンクをクリックして、配信管理ページに移動します",
   action: "click",
-  selector: "[data-testid=\\"broadcast-id-create-button\\"]",
-  notes: "このステップで /broadcast/[id] ページに遷移します"
+  selector: "a[href=\\"/broadcast\\"]",
+  notes: "このステップで /broadcast ページに遷移します"
 },
 {
   stepNumber: 2,
-  description: "配信IDをコピーします",
+  description: "「新規配信IDを生成」ボタンをクリックして配信IDを作成します",
   action: "click",
-  selector: "[data-testid=\\"copy-broadcast-id-button\\"]",
-  notes: "/broadcast/[id] ページでこのボタンを探します"
+  selector: "[data-testid=\\"broadcast-id-create-button\\"]",
+  notes: "/broadcast ページ。このステップで /broadcast/[id] ページに遷移します"
+},
+{
+  stepNumber: 3,
+  description: "「チャンネルを追加」ボタンをクリックしてチャンネルを作成します",
+  action: "click",
+  selector: "[data-testid=\\"channel-create-button\\"]",
+  notes: "/broadcast/[id] ページ"
 }
 
 **URL pattern rules**:
 - /broadcast → static page (no placeholder)
 - /broadcast/[id] → broadcast detail page (dynamic ID)
-- /channel/[id] → channel detail page (dynamic ID)
 - /stream/[id] → stream viewer page (dynamic ID)
 
 # General Guidelines
 
 1. **Use data-testid selectors when available**: Elements with data-testid are most stable
 2. **Be concise**: Keep steps short and actionable (3-7 steps ideal)
-3. **Check prerequisites**: If the user needs to be on a different page or logged in, include that
+3. **Always start from the current page**: Never skip navigation steps
 4. **Be specific**: Use exact button names and element descriptions from the DOM
-5. **Provide context**: Explain why each step is necessary
+5. **Provide context**: Explain why each step is necessary in the description
 6. **Handle edge cases**: If the goal can't be achieved with the current page state, explain what's needed
 
 # Output Format
 
 Provide a structured guide with:
-- Clear, numbered steps
+- Clear, numbered steps starting from the CURRENT page
 - Action types (click, input, navigate, observe)
 - CSS selectors for interactive elements (following the Selector Guidelines above)
 - Summary of what the guide accomplishes
@@ -118,10 +165,13 @@ export function buildUserPrompt(
 
   return `User Goal: ${userGoal}
 
-Current Page Structure:
+Current Page DOM Snapshot (this is what the user currently sees):
 ${serializedDOM}
 
-Please generate a step-by-step guide to help the user achieve their goal. Consider the current page state and available interactive elements.
-
-IMPORTANT: Only use selectors that match elements in the DOM snapshot above. Prefer data-testid selectors. Never use nth-child selectors.`;
+Generate a step-by-step guide starting from this page. CRITICAL RULES:
+- Step 1 MUST target an element that exists in the DOM snapshot above
+- If navigation to another page is needed, first include a step to click a link/button visible above
+- For elements on other pages, use data-testid selectors from the Known Elements list in your instructions
+- Never use nth-child selectors
+- Prefer data-testid selectors`;
 }

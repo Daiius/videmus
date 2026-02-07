@@ -20,18 +20,36 @@ type GuidanceRendererProps = {
 };
 
 /**
- * Extract expected page URL pattern from step notes
- * Returns patterns like "/broadcast/[id]" or "/channel/[id]"
+ * Extract all page URL patterns from step notes
+ * Returns patterns like ["/broadcast", "/broadcast/[id]"]
+ * Notes may contain both source and destination pages
  */
-function extractExpectedPage(step: GuideStepType): string | undefined {
-  if (step.notes) {
-    // Match URL patterns including [id] placeholders
-    const urlMatch = step.notes.match(/\/[a-zA-Z0-9/_[\]-]+/);
-    if (urlMatch) {
-      return urlMatch[0];
-    }
-  }
-  return undefined;
+function extractExpectedPages(step: GuideStepType): string[] {
+  if (!step.notes) return [];
+  // Match all URL patterns including [id] placeholders
+  const matches = step.notes.match(/\/[a-zA-Z0-9/_[\]-]+/g);
+  return matches ?? [];
+}
+
+/**
+ * Check if the current page matches any of the expected page patterns
+ */
+function isOnExpectedPage(currentPath: string, step: GuideStepType): boolean {
+  const patterns = extractExpectedPages(step);
+  if (patterns.length === 0) return true; // No page info → assume correct
+  return patterns.some(pattern => matchesPagePattern(currentPath, pattern));
+}
+
+/**
+ * Get the first non-matching expected page (for navigation prompt)
+ */
+function getNavigationTarget(currentPath: string, step: GuideStepType): string | undefined {
+  const patterns = extractExpectedPages(step);
+  if (patterns.length === 0) return undefined;
+  // If already on one of the expected pages, no navigation needed
+  if (patterns.some(pattern => matchesPagePattern(currentPath, pattern))) return undefined;
+  // Return the first pattern as navigation target
+  return patterns[0];
 }
 
 /**
@@ -116,9 +134,14 @@ export function GuidanceRenderer({
       // If the current step is a click/navigate action, the navigation was expected
       const currentStep = guide.steps[currentStepIndex];
       if (currentStep && (currentStep.action === 'click' || currentStep.action === 'navigate')) {
-        // Wait for DOM to settle, then advance to next step
+        // Wait for DOM to settle, then advance
         setTimeout(() => {
-          onNextStepRef.current();
+          if (currentStepIndex >= guide.steps.length - 1) {
+            // Last step completed with navigation — guide is done
+            onCompleteRef.current();
+          } else {
+            onNextStepRef.current();
+          }
         }, 500);
       }
     }
@@ -178,18 +201,17 @@ export function GuidanceRenderer({
 
           // If this is the current step and element is missing, show fallback
           if (i === currentStepIndex) {
-            const expectedPage = extractExpectedPage(step);
-            const onCorrectPage = !expectedPage || matchesPagePattern(pathname, expectedPage);
+            const onCorrectPage = isOnExpectedPage(pathname, step);
 
             setShowFallback(true);
             if (onCorrectPage) {
               // We're on the right page pattern, but selector didn't match
               setFallbackMessage(
-                `ステップ ${step.stepNumber} の対象要素がページ上に見つかりません。ページの状態が変わった可能性があります。`
+                `対象の要素がページ上に見つかりません。ページの状態が変わった可能性があります。`
               );
             } else {
               setFallbackMessage(
-                `ステップ ${step.stepNumber} の対象要素が見つかりません。正しいページにいることを確認してください。`
+                `${step.description}`
               );
             }
             return;
@@ -274,10 +296,9 @@ export function GuidanceRenderer({
     };
   }, [guide, currentStepIndex, pathname]);
 
-  // Determine if expected page is actually a different page vs just element not found
+  // Determine navigation target for fallback display
   const currentStepForRender = guide.steps[currentStepIndex];
-  const expectedPage = currentStepForRender ? extractExpectedPage(currentStepForRender) : undefined;
-  const isOnCorrectPage = !expectedPage || matchesPagePattern(pathname, expectedPage);
+  const navigationTarget = currentStepForRender ? getNavigationTarget(pathname, currentStepForRender) : undefined;
 
   return (
     <>
@@ -285,7 +306,8 @@ export function GuidanceRenderer({
         <WrongPageNotification
           message={fallbackMessage}
           stepNumber={currentStepForRender?.stepNumber ?? 0}
-          expectedPage={isOnCorrectPage ? undefined : expectedPage}
+          totalSteps={guide.totalSteps}
+          expectedPage={navigationTarget}
           currentPage={pathname}
           onNavigate={(url) => {
             window.location.href = url;
