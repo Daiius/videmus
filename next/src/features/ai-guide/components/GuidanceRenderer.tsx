@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import './driver-overrides.css';
 import type { GuideResult, GuideStep as GuideStepType } from '../core/types';
 import { WrongPageNotification } from './WrongPageNotification';
 
@@ -132,6 +133,7 @@ export function GuidanceRenderer({
   onComplete
 }: GuidanceRendererProps) {
   const driverRef = useRef<Driver | null>(null);
+  const isAutoAdvancingRef = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
   const previousPathname = useRef(pathname);
@@ -177,6 +179,8 @@ export function GuidanceRenderer({
 
   // Initialize Driver.js for current step
   useEffect(() => {
+    isAutoAdvancingRef.current = false;
+
     const currentStep = guide.steps[currentStepIndex];
     if (!currentStep) {
       onCompleteRef.current();
@@ -290,6 +294,8 @@ export function GuidanceRenderer({
     // Initialize Driver.js
     const driverObj = driver({
       showProgress: true,
+      overlayOpacity: 0,
+      allowClose: false,
       steps: driverSteps,
       onNextClick: () => {
         if (currentStepIndex < guide.steps.length - 1) {
@@ -307,8 +313,19 @@ export function GuidanceRenderer({
         }
       },
       onDestroyStarted: () => {
-        onCompleteRef.current();
-        driverRef.current = null;
+        // ダイアログが閉じている最中はフォーカス解放で destroy が呼ばれるが、
+        // Driver.js の破棄自体を防止して popover を維持する
+        const dialogClosing = document.querySelector('[role="dialog"][data-closed]');
+        if (dialogClosing || isAutoAdvancingRef.current) {
+          return; // destroy() を呼ばないことで Driver.js の破棄を防止
+        }
+
+        // cleanup からの destroy では driverRef.current が既に null
+        // ユーザが Close ボタンを押した場合のみガイド完了
+        if (driverRef.current) {
+          onCompleteRef.current();
+          driverRef.current = null;
+        }
         driverObj.destroy();
       }
     });
@@ -316,10 +333,67 @@ export function GuidanceRenderer({
     driverRef.current = driverObj;
     driverObj.drive(validCurrentIndex);
 
+    // click アクションの場合、対象要素のクリックでステップを自動進行
+    let clickCleanup: (() => void) | undefined;
+    if (currentStep.action === 'click' && currentStep.selector) {
+      const targetEl = document.querySelector(currentStep.selector);
+      if (targetEl) {
+        const handleClick = () => {
+          // ダイアログ等の表示アニメーション完了を待つ
+          isAutoAdvancingRef.current = true;
+          setTimeout(() => {
+            if (currentStepIndex < guide.steps.length - 1) {
+              onNextStepRef.current();
+            } else {
+              onCompleteRef.current();
+              driverObj.destroy();
+            }
+          }, 500);
+        };
+        targetEl.addEventListener('click', handleClick, { once: true });
+        clickCleanup = () => targetEl.removeEventListener('click', handleClick);
+      }
+    }
+
+    // ダイアログ閉じを検知して自動進行
+    let dialogObserverCleanup: (() => void) | undefined;
+    const openDialog = document.querySelector(
+      '[role="dialog"]:not([data-closed])'
+    );
+    if (openDialog) {
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (
+            mutation.type === 'attributes' &&
+            mutation.attributeName === 'data-closed'
+          ) {
+            // ダイアログが閉じた → 次のステップへ
+            isAutoAdvancingRef.current = true;
+            setTimeout(() => {
+              if (currentStepIndex < guide.steps.length - 1) {
+                onNextStepRef.current();
+              } else {
+                onCompleteRef.current();
+                driverObj.destroy();
+              }
+            }, 500);
+            observer.disconnect();
+            break;
+          }
+        }
+      });
+      observer.observe(openDialog, { attributes: true });
+      dialogObserverCleanup = () => observer.disconnect();
+    }
+
     return () => {
+      clickCleanup?.();
+      dialogObserverCleanup?.();
       if (driverRef.current) {
-        driverRef.current.destroy();
+        // null を先にセットして onDestroyStarted でガイド完了を防ぐ
+        const d = driverRef.current;
         driverRef.current = null;
+        d.destroy();
       }
     };
   }, [guide, currentStepIndex, pathname]);

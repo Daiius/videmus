@@ -1,0 +1,12 @@
+/* backdrop(overlay)を無効化（子のSVG pathも含む） */
+.driver-overlay,
+.driver-overlay * {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* outline でハイライト */
+.driver-active-element {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
