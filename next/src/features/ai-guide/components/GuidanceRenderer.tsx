@@ -5,7 +5,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import type { GuideResult, GuideStep as GuideStepType } from '../core/types';
@@ -94,6 +94,33 @@ function matchesPagePattern(currentPath: string, expectedPattern: string): boole
 }
 
 /**
+ * Validate if a URL is a safe internal path
+ * Only allows internal paths that match known safe patterns
+ */
+function isSafeInternalPath(url: string): boolean {
+  // Block absolute URLs (external sites)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return false;
+  }
+
+  // Only allow paths starting with /
+  if (!url.startsWith('/')) {
+    return false;
+  }
+
+  // Whitelist of safe path patterns
+  const safePatterns = [
+    /^\/$/,                              // Home
+    /^\/broadcast$/,                     // Broadcast page
+    /^\/broadcast\/[a-zA-Z0-9-_]+$/,     // Broadcast detail
+    /^\/stream\/[a-zA-Z0-9-_]+$/,        // Stream viewer
+    /^\/admin$/,                         // Admin page
+  ];
+
+  return safePatterns.some(pattern => pattern.test(url));
+}
+
+/**
  * Component for rendering visual guidance using Driver.js
  * Supports page navigation detection and element validation
  */
@@ -106,6 +133,7 @@ export function GuidanceRenderer({
 }: GuidanceRendererProps) {
   const driverRef = useRef<Driver | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const previousPathname = useRef(pathname);
   const [showFallback, setShowFallback] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState('');
@@ -310,7 +338,15 @@ export function GuidanceRenderer({
           expectedPage={navigationTarget}
           currentPage={pathname}
           onNavigate={(url) => {
-            window.location.href = url;
+            // Validate URL before navigation
+            if (!isSafeInternalPath(url)) {
+              console.error('Unsafe navigation blocked:', url);
+              alert('安全でないページ遷移がブロックされました。');
+              return;
+            }
+
+            // Use Next.js router for client-side navigation
+            router.push(url);
           }}
           onSkip={() => {
             setShowFallback(false);

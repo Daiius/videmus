@@ -8,6 +8,7 @@ import { getSession } from '@/lib/session';
 import type { AccessibilityTreeSnapshot, GuideResult } from '../core/types';
 import { generateSteps, validateGuide } from '../services/ai-guide-engine';
 import { sanitizeInput } from '../core/utils';
+import { getBroadcastInfo, getMyBroadcast } from '@/lib/broadcastIds';
 
 /**
  * Rate limiting store
@@ -134,8 +135,38 @@ export async function generateGuide(
       };
     }
 
-    // 3. DOM snapshot validation
-    const snapshotValidation = validateDomSnapshot(domSnapshot);
+    // 3. Fetch user's broadcast context
+    let broadcastContext = undefined;
+    try {
+      const { broadcastId } = await getMyBroadcast();
+      const broadcastInfo = await getBroadcastInfo(broadcastId);
+
+      if (broadcastInfo) {
+        broadcastContext = {
+          broadcastId: broadcastInfo.id,
+          isApproved: broadcastInfo.isApproved,
+          hasChannels: broadcastInfo.channels.length > 0,
+          channelCount: broadcastInfo.channels.length,
+          currentChannelId: broadcastInfo.currentChannelId,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to fetch broadcast info for guide context:', error);
+      // Continue with guide generation even if broadcast info fetch fails
+    }
+
+    // 4. Enhance DOM snapshot with user context
+    const enhancedSnapshot: AccessibilityTreeSnapshot = {
+      ...domSnapshot,
+      userContext: {
+        isLoggedIn: true,
+        isAdmin: session.user.isAdmin,
+        broadcast: broadcastContext,
+      },
+    };
+
+    // 5. DOM snapshot validation
+    const snapshotValidation = validateDomSnapshot(enhancedSnapshot);
     if (!snapshotValidation.valid) {
       return {
         success: false,
@@ -146,7 +177,7 @@ export async function generateGuide(
       };
     }
 
-    // 4. Input validation and sanitization
+    // 6. Input validation and sanitization
     const sanitizedGoal = sanitizeInput(userGoal);
     if (!sanitizedGoal || sanitizedGoal.length < 3) {
       return {
@@ -158,7 +189,7 @@ export async function generateGuide(
       };
     }
 
-    // 5. Validate API key
+    // 7. Validate API key
     if (!process.env.OPENAI_API_KEY) {
       console.error('OPENAI_API_KEY is not set');
       return {
@@ -170,10 +201,10 @@ export async function generateGuide(
       };
     }
 
-    // 6. Generate guide using LLM
-    const guide = await generateSteps(sanitizedGoal, domSnapshot);
+    // 8. Generate guide using LLM with enhanced snapshot
+    const guide = await generateSteps(sanitizedGoal, enhancedSnapshot);
 
-    // 7. Validate the generated guide
+    // 9. Validate the generated guide
     if (!validateGuide(guide)) {
       return {
         success: false,

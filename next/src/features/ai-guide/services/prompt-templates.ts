@@ -164,12 +164,37 @@ export function buildUserPrompt(
 ): string {
   const serializedDOM = serializeAccessibilityTree(domSnapshot);
 
+  // Build user context text
+  let userContextText = '';
+  if (domSnapshot.userContext) {
+    const ctx = domSnapshot.userContext;
+    userContextText = `
+User Context:
+- Logged in: ${ctx.isLoggedIn ? 'Yes' : 'No'}
+- Admin: ${ctx.isAdmin ? 'Yes' : 'No'}`;
+
+    if (ctx.broadcast) {
+      userContextText += `
+- Broadcast ID: ${ctx.broadcast.broadcastId}
+- Approved: ${ctx.broadcast.isApproved ? 'Yes (can broadcast)' : 'No (waiting for admin approval)'}
+- Channels: ${ctx.broadcast.hasChannels ? `${ctx.broadcast.channelCount} channel(s)` : 'No channels yet'}
+- Current Channel: ${ctx.broadcast.currentChannelId || 'None'}`;
+    } else {
+      userContextText += `
+- Broadcast: Not created yet`;
+    }
+  }
+
   return `User Goal: ${userGoal}
+${userContextText}
 
 Current Page DOM Snapshot (this is what the user currently sees):
 ${serializedDOM}
 
 Generate a step-by-step guide starting from this page. CRITICAL RULES:
+- Consider the user's current state (approval status, channels, etc.) when generating the guide
+- If the user is not approved, guide them to wait for admin approval or contact admin
+- If the user has no channels, guide them to create one if needed for their goal
 - Step 1 MUST target an element that exists in the DOM snapshot above
 - If navigation to another page is needed, first include a step to click a link/button visible above
 - For elements on other pages, use data-testid selectors from the Known Elements list in your instructions

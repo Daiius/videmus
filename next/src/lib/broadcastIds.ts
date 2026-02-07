@@ -43,16 +43,20 @@ export const getBroadcastInfo = async (broadcastId: string): Promise<Broadcast |
     param: { broadcastId },
   })
 
+  // Type assertion to allow 404 check before response.ok check
+  if ((response as Response).status === 404) {
+    return undefined
+  }
+
   if (!response.ok) {
-    if (response.status === 404) {
-      return undefined
-    }
     throw new Error(
       `配信ステータス取得時にエラーが発生しました ${response.status} ${response.statusText}`
     )
   }
 
-  return await response.json()
+  const data = await response.json()
+  // Handle null response case
+  return data ?? undefined
 }
 
 /**
