@@ -1,14 +1,4 @@
-import { cookies } from 'next/headers'
-
-const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ''
-
-const getCookieHeader = async () => {
-  const cookieStore = await cookies()
-  return cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ')
-}
+import { serverClient } from './api'
 
 export type AdminUser = {
   id: string
@@ -25,13 +15,8 @@ export type AdminUser = {
  * ユーザー一覧を取得します（管理者のみ）
  */
 export const getUsers = async (): Promise<AdminUser[]> => {
-  const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/admin/users`, {
-    headers: {
-      Cookie: cookieHeader,
-    },
-    cache: 'no-store',
-  })
+  const client = await serverClient()
+  const response = await client.admin.users.$get()
 
   if (!response.ok) {
     throw new Error(
@@ -45,14 +30,10 @@ export const getUsers = async (): Promise<AdminUser[]> => {
  * ユーザーの承認状態を更新します（管理者のみ）
  */
 export const setUserApproval = async (userId: string, isApproved: boolean): Promise<void> => {
-  const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/admin/users/${userId}/approval`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-    },
-    body: JSON.stringify({ isApproved }),
+  const client = await serverClient()
+  const response = await client.admin.users[':userId'].approval.$patch({
+    param: { userId },
+    json: { isApproved },
   })
 
   if (!response.ok) {

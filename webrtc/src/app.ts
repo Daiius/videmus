@@ -22,12 +22,12 @@ import { patchBroadcastsChannels } from './lib/patchBroadcastsChannels'
 import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
-import { bearerAuth, sessionAuth, broadcastTokenAuth } from './middlewares'
+import { bearerAuth, sessionAuth, broadcastTokenAuth, adminOnly } from './middlewares'
 import { authApp } from './routes/auth'
 import { setupApp } from './routes/setup'
 import { tokensApp } from './routes/tokens'
-import { adminApp } from './routes/admin'
 import { getOrCreateBroadcastForUser } from 'videmus-database/lib'
+import { listUsers, setUserApproval } from 'videmus-database/admin'
 import { db } from 'videmus-database'
 
 
@@ -49,9 +49,6 @@ app.route('/', setupApp)
 
 // トークン管理ルート
 app.route('/', tokensApp)
-
-// 管理者ルート
-app.route('/', adminApp)
 
 const handleError = <C extends Context>(c: C, error: VidemusError) => {
   switch (error.type) {
@@ -468,8 +465,40 @@ const route =
       return c.body(null, 200)
     },
   )
+  /**
+   * ユーザー一覧取得（管理者のみ）
+   */
+  .get(
+    '/admin/users',
+    sessionAuth,
+    adminOnly,
+    async (c) => {
+      const users = await listUsers()
+      return c.json(users)
+    },
+  )
+  /**
+   * ユーザー承認状態の切替（管理者のみ）
+   */
+  .patch(
+    '/admin/users/:userId/approval',
+    sessionAuth,
+    adminOnly,
+    zValidator(
+      'json',
+      z.object({
+        isApproved: z.boolean(),
+      }),
+    ),
+    async (c) => {
+      const userId = c.req.param('userId')
+      const { isApproved } = c.req.valid('json')
 
+      await setUserApproval(userId, isApproved)
 
+      return c.json({ success: true, userId, isApproved })
+    },
+  )
 
 export type AppType = typeof route
 
