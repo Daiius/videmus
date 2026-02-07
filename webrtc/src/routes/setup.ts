@@ -93,10 +93,10 @@ setupApp.get('/auth/setup/callback', async (c) => {
     return c.redirect(`${redirectUrl}?error=no_session`)
   }
 
-  // ユーザーを管理者に設定
+  // ユーザーを管理者に設定（管理者は自動承認）
   await db
     .update(user)
-    .set({ isAdmin: true })
+    .set({ isAdmin: true, isApproved: true })
     .where(eq(user.id, session.user.id))
 
   // セットアップトークンを削除
@@ -132,6 +132,7 @@ setupApp.get('/auth/session', async (c) => {
     user: {
       ...session.user,
       isAdmin: userWithAdmin?.isAdmin ?? false,
+      isApproved: userWithAdmin?.isApproved ?? false,
     },
     session: session.session,
   })

@@ -15,20 +15,23 @@ export function buildSystemPrompt(): string {
 
 Videmus is a web application for creating and managing live video streams. Key concepts:
 
-- **Broadcast ID**: A unique identifier for a broadcast session. Users must generate a broadcast ID before creating channels.
+- **Broadcast ID**: A unique identifier for a broadcast session. A broadcast ID is automatically assigned when a user first visits the broadcast page.
 - **Channel**: A streaming endpoint. Users can create multiple channels under a broadcast ID.
 - **Token**: Authentication token required for streaming to a channel.
 - **Stream URL**: The URL viewers use to watch the broadcast.
 - **OBS URL**: The RTMP URL used by OBS (broadcasting software) to send video.
+- **Approval**: Admin must approve users before broadcasting is enabled. Admins manage approvals at /admin.
 
 # User Workflow
 
-1. **Authentication**: Users must be logged in to create broadcasts
-2. **Create Broadcast ID**: Generate a new broadcast ID on /broadcast page
-3. **Create Channel**: Create a channel on the /broadcast/[id] detail page
-4. **Get OBS URL**: Retrieve the WHIP URL on the /broadcast/[id] detail page
-5. **Start Streaming**: Use OBS to stream to the URL
-6. **Share Stream URL**: Share the viewer URL with audience
+1. **Authentication**: Users must be logged in
+2. **Visit Broadcast Page**: Navigate to /broadcast → broadcast ID is automatically created
+3. **Wait for Approval**: Admin must approve your account at /admin
+4. **Create Channel**: On /broadcast/[id]
+5. **Get OBS URL**: On /broadcast/[id]
+6. **Create Token**: Generate auth token for OBS
+7. **Start Streaming**: Use OBS to stream
+8. **Share Stream URL**: Share viewer URL
 
 # CRITICAL: Start from the Current Page
 
@@ -38,14 +41,14 @@ The DOM snapshot provided shows ONLY the current page the user is on. Your guide
 2. **NEVER start with a selector for an element NOT in the DOM snapshot**. The guide system will try to highlight each element on the page — if the selector doesn't exist, the user sees an error.
 3. **For subsequent pages**, use data-testid selectors from the Known Elements list below.
 
-**Example** (user is on / home page and wants to generate a broadcast ID):
+**Example** (user is on / home page and wants to start broadcasting):
 
 GOOD guide:
-- Step 1: action "click", selector for the "新規配信ページへ" link visible in the DOM → navigates to /broadcast
-- Step 2: action "click", selector [data-testid="broadcast-id-create-button"] on /broadcast
+- Step 1: action "click", selector for the "新規配信ページへ" link visible in the DOM → navigates to /broadcast → auto-redirects to /broadcast/[id]
+- Step 2: action "observe", check approval status on /broadcast/[id]
 
 BAD guide (DO NOT DO THIS):
-- Step 1: action "click", selector [data-testid="broadcast-id-create-button"] ← this element is NOT on the current page!
+- Step 1: action "click", selector [data-testid="some-element"] ← this element is NOT on the current page!
 
 # Known Pages and Their Interactive Elements
 
@@ -55,7 +58,7 @@ Use this reference to generate selectors for elements on pages other than the cu
 - link "新規配信ページへ" → navigates to /broadcast
 
 ## /broadcast (Broadcast management page)
-- [data-testid="broadcast-id-create-button"] button "新規配信IDを生成" → generates a new broadcast ID and navigates to /broadcast/[id]
+- Automatically redirects to /broadcast/[id] for logged-in users (broadcast ID is auto-created)
 
 ## /broadcast/[id] (Broadcast detail page)
 - [data-testid="obs-url-show-button"] → shows OBS/WHIP broadcast URL
@@ -66,6 +69,10 @@ Use this reference to generate selectors for elements on pages other than the cu
 - [data-testid="channel-name-input"] → edits channel name
 - [data-testid="channel-auth-checkbox"] → toggles channel authentication
 - Stream URL is displayed as text for viewers to access
+
+## /admin (Admin user management page - admin only)
+- User management table with approval toggles
+- [data-testid="user-approval-toggle-{userId}"] → toggles user approval
 
 ## /stream/[id] (Stream viewer page)
 - Video player area for watching the broadcast
@@ -87,7 +94,7 @@ CRITICAL: Generate STABLE selectors that will work reliably:
 7. **NEVER use generated CSS classes**: Classes like \`.css-1abc23\` are auto-generated and unstable
 
 Example GOOD selectors:
-- \`[data-testid="broadcast-id-create-button"]\`
+- \`[data-testid="user-approval-toggle-{userId}"]\`
 - \`button[aria-label="新規配信IDを生成"]\`
 - \`a[href="/broadcast"]\`
 
@@ -113,17 +120,10 @@ Example multi-page guide (user is on / and wants to create a channel):
   description: "「新規配信ページへ」リンクをクリックして、配信管理ページに移動します",
   action: "click",
   selector: "a[href=\\"/broadcast\\"]",
-  notes: "このステップで /broadcast ページに遷移します"
+  notes: "このステップで /broadcast ページに遷移し、自動的に /broadcast/[id] にリダイレクトされます"
 },
 {
   stepNumber: 2,
-  description: "「新規配信IDを生成」ボタンをクリックして配信IDを作成します",
-  action: "click",
-  selector: "[data-testid=\\"broadcast-id-create-button\\"]",
-  notes: "/broadcast ページ。このステップで /broadcast/[id] ページに遷移します"
-},
-{
-  stepNumber: 3,
   description: "「チャンネルを追加」ボタンをクリックしてチャンネルを作成します",
   action: "click",
   selector: "[data-testid=\\"channel-create-button\\"]",
@@ -131,8 +131,9 @@ Example multi-page guide (user is on / and wants to create a channel):
 }
 
 **URL pattern rules**:
-- /broadcast → static page (no placeholder)
+- /broadcast → auto-redirects to /broadcast/[id] (no interaction needed)
 - /broadcast/[id] → broadcast detail page (dynamic ID)
+- /admin → admin user management page
 - /stream/[id] → stream viewer page (dynamic ID)
 
 # General Guidelines

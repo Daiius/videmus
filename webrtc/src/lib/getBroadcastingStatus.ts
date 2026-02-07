@@ -1,5 +1,6 @@
 
 import { getBroadcastingStatus as getBroadcastingStatusDb } from 'videmus-database/lib';
+import { getUserById } from 'videmus-database/admin';
 
 import type { VidemusResult } from '../types'
 import { resourcesDict } from '../resources'
@@ -33,7 +34,8 @@ export const getBroadcastingStatus = async ({
     };
   }
 
-  if (!searchedEntry.isAvailable) {
+  const owner = searchedEntry.ownerId ? await getUserById(searchedEntry.ownerId) : null
+  if (!owner?.isApproved && !owner?.isAdmin) {
     return {
       success: true,
       data: {

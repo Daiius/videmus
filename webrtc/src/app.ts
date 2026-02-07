@@ -26,6 +26,9 @@ import { bearerAuth, sessionAuth, broadcastTokenAuth } from './middlewares'
 import { authApp } from './routes/auth'
 import { setupApp } from './routes/setup'
 import { tokensApp } from './routes/tokens'
+import { adminApp } from './routes/admin'
+import { getOrCreateBroadcastForUser } from 'videmus-database/lib'
+import { db } from 'videmus-database'
 
 
 export const app = new Hono()
@@ -46,6 +49,9 @@ app.route('/', setupApp)
 
 // トークン管理ルート
 app.route('/', tokensApp)
+
+// 管理者ルート
+app.route('/', adminApp)
 
 const handleError = <C extends Context>(c: C, error: VidemusError) => {
   switch (error.type) {
@@ -335,25 +341,44 @@ const route =
     },
   )
   /**
+   * ログインユーザーの配信IDを取得（なければ自動作成）
+   * /broadcasts/:broadcastId より前に定義して "mine" がパラメータとして解釈されるのを防ぐ
+   */
+  .get(
+    '/broadcasts/mine',
+    sessionAuth,
+    async c => {
+      const userId = c.get('session')?.user?.id
+      if (!userId) {
+        return c.json({ error: 'User not found' }, 401)
+      }
+      const result = await getOrCreateBroadcastForUser(userId)
+      return c.json(result, 200)
+    },
+  )
+  /**
    * 指定した配信IDの情報を取得します
-   * broadcastIdはURLに指定されたものを受け取るので、
-   * 存在しない値が入る場合をスムーズに扱うため、
-   * その場合undefinedを返します
-   *
-   * currentChannelIdはデータベース制約上はnullになる可能性がありますが
-   * (MySQLでdeferred constraintが使えないため妥協)
-   * この関数を経由して取得するようにし、
-   * TODO: どうやって強制する？？
-   * ここでnullチェックと有効な値のセットを事前に行うようにします
+   * ownerのisApprovedも含めて返します
    */
   .get(
     '/broadcasts/:broadcastId',
     sessionAuth,
     async c => {
       const broadcastId = c.req.param('broadcastId')
-      const result = await getBroadcastsById(broadcastId)
+      const broadcastInfo = await getBroadcastsById(broadcastId)
 
-      return c.json(result, 200)
+      if (!broadcastInfo) {
+        return c.json(null, 200)
+      }
+
+      const owner = broadcastInfo.ownerId
+        ? await db.query.user.findFirst({ where: { id: broadcastInfo.ownerId } })
+        : null
+
+      return c.json({
+        ...broadcastInfo,
+        isApproved: owner?.isApproved || owner?.isAdmin || false,
+      }, 200)
     },
   )
   /**

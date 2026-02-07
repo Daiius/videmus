@@ -2,6 +2,7 @@ import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { auth, type Session } from './lib/auth'
 import { validateBroadcastToken } from './lib/validateBroadcastToken'
+import { db } from 'videmus-database'
 
 // コンテキストにセッション情報を追加するための型拡張
 declare module 'hono' {
@@ -52,6 +53,8 @@ export const sessionAuth = createMiddleware(async (c, next) => {
 /**
  * 管理者のみアクセス可能なミドルウェア
  * sessionAuth の後に使用すること
+ * BetterAuth の JWE キャッシュには isAdmin が含まれない場合があるため、
+ * DB から直接確認する
  */
 export const adminOnly = createMiddleware(async (c, next) => {
   const session = c.get('session')
@@ -60,11 +63,11 @@ export const adminOnly = createMiddleware(async (c, next) => {
     throw new HTTPException(401, { message: 'Authentication required' })
   }
 
-  // isAdmin は additionalFields で追加したフィールド
-  // BetterAuth の型には含まれていないため、any でキャスト
-  const user = session.user as { isAdmin?: boolean }
+  const userRecord = await db.query.user.findFirst({
+    where: { id: session.user.id },
+  })
 
-  if (!user.isAdmin) {
+  if (!userRecord?.isAdmin) {
     throw new HTTPException(403, { message: 'Admin access required' })
   }
 

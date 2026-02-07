@@ -13,7 +13,7 @@ const PRESET_GOALS = [
   '配信を開始したい',
   '視聴URLを取得したい',
   'チャンネルを作成したい',
-  '配信IDを生成したい'
+  'ユーザーを承認したい',
 ];
 
 type AIGuidePresetListProps = {

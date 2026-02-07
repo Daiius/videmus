@@ -7,13 +7,13 @@ import Panel from '@/components/Panel';
 
 export type BroadcastIdPanelProps = {
   broadcastId: string,
-  isAvailable: boolean,
+  isApproved: boolean,
   className?: string,
 }
 
 const BroadcastIdPanel = ({
   broadcastId,
-  isAvailable,
+  isApproved,
   className,
 }: BroadcastIdPanelProps) => (
   <Panel
@@ -25,24 +25,23 @@ const BroadcastIdPanel = ({
       <p className='overflow-ellipsis overflow-hidden whitespace-nowrap min-w-0'>
         {broadcastId}
       </p>
-      {isAvailable
+      {isApproved
         ? <CheckCircleIcon className='size-4 text-green-400' aria-hidden='true' />
-        : <XCircleIcon className='size-4 text-red-400' aria-hidden='true' />
+        : <XCircleIcon className='size-4 text-amber-400' aria-hidden='true' />
       }
-      <p>{isAvailable ? '有効' : '無効' }</p>
+      <p>{isApproved ? '有効' : '承認待ち' }</p>
     </div>
-    {!isAvailable &&
+    {!isApproved &&
       <div className={clsx(
         'ml-4',
         'p-2',
-        'border border-red-400 rounded-md',
+        'border border-amber-400 rounded-md',
       )}>
-        <p>管理者にID（左から5-6文字程度でも可）を伝えて下さい</p>
-        <p>手動で有効化するので、お待ち下さい....</p>
+        <p>管理者の承認をお待ちください</p>
+        <p>承認されると配信が有効になります</p>
       </div>
     }
   </Panel>
 );
 
 export default BroadcastIdPanel;
-

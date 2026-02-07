@@ -24,6 +24,12 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      isApproved: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
   },
   socialProviders: {

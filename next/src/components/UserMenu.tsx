@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { UserCircleIcon, ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, ArrowRightStartOnRectangleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 
 import { useAuth } from '@/components/AuthProvider'
 import LoginButton from '@/components/LoginButton'
@@ -56,6 +56,22 @@ const UserMenu: React.FC<UserMenuProps> = ({ className }) => {
         <div className='px-4 py-2 text-sm text-gray-500 border-b border-gray-200'>
           {user.email}
         </div>
+        {user.isAdmin && (
+          <MenuItem>
+            <a
+              href="/admin"
+              className={clsx(
+                'w-full flex items-center gap-2 px-4 py-2 text-sm',
+                'bg-transparent hover:bg-gray-100',
+                'data-[focus]:bg-gray-100',
+                'no-underline text-inherit'
+              )}
+            >
+              <ShieldCheckIcon className='w-4 h-4' />
+              ユーザー管理
+            </a>
+          </MenuItem>
+        )}
         <MenuItem>
           <a
             href="/auth/cleanup"

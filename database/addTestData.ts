@@ -16,7 +16,6 @@ await db.transaction(async (tx) => {
   await tx.insert(broadcastIds)
     .values({
       id: process.env.TEST_BROADCAST_ID!,
-      isAvailable: true,
       currentChannelId: undefined,
     });
 

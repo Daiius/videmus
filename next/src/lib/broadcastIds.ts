@@ -21,29 +21,28 @@ export type Channel = {
 
 export type Broadcast = {
   id: string
-  isAvailable: boolean
+  isApproved: boolean
   currentChannelId: string
   ownerId: string | null
   channels: Channel[]
 }
 
 /**
- * 新しい配信IDを無効化状態で作成します
- * 新しいチャンネルも1つデフォルト値で作成します
+ * ログインユーザーの配信IDを取得（なければ自動作成）
  * Cookie を転送してセッション認証で API を呼び出します
  */
-export const createNewBroadcastId = async () => {
+export const getMyBroadcast = async (): Promise<{ broadcastId: string }> => {
   const cookieHeader = await getCookieHeader()
-  const response = await fetch(`${API_URL}/broadcasts`, {
-    method: 'POST',
+  const response = await fetch(`${API_URL}/broadcasts/mine`, {
     headers: {
       Cookie: cookieHeader,
     },
+    cache: 'no-store',
   })
 
   if (!response.ok) {
     throw new Error(
-      `新規配信ID作成時にエラーが発生しました: ${response.status} ${response.statusText}`
+      `配信ID取得時にエラーが発生しました: ${response.status} ${response.statusText}`
     )
   }
   return await response.json()
