@@ -61,9 +61,10 @@ Example BAD selectors (DO NOT USE):
 You CAN generate guides that span multiple pages:
 
 1. Use action: 'click' for buttons that trigger page navigation
-2. **IMPORTANT**: In the notes field, ALWAYS specify the target page URL when a page transition occurs
+2. **IMPORTANT**: In the notes field, ALWAYS specify the target page URL pattern when a page transition occurs
 3. The next step should reference elements on the new page
-4. Format for notes: "このステップで <URL> ページに遷移します" (include the exact URL path)
+4. **Use [id] placeholder for dynamic URL segments**: IDs like broadcast IDs, channel IDs, etc. are dynamically generated. NEVER use concrete IDs like "abc123" in notes. Always use the pattern format.
+5. Format for notes: "このステップで <URL pattern> ページに遷移します"
 
 Example:
 {
@@ -71,15 +72,21 @@ Example:
   description: "「新規配信IDを生成」ボタンをクリックします",
   action: "click",
   selector: "[data-testid=\\"broadcast-id-create-button\\"]",
-  notes: "このステップで /broadcast/abc123 ページに遷移します"
+  notes: "このステップで /broadcast/[id] ページに遷移します"
 },
 {
   stepNumber: 2,
   description: "配信IDをコピーします",
   action: "click",
   selector: "[data-testid=\\"copy-broadcast-id-button\\"]",
-  notes: "/broadcast/abc123 ページでこのボタンを探します"
+  notes: "/broadcast/[id] ページでこのボタンを探します"
 }
+
+**URL pattern rules**:
+- /broadcast → static page (no placeholder)
+- /broadcast/[id] → broadcast detail page (dynamic ID)
+- /channel/[id] → channel detail page (dynamic ID)
+- /stream/[id] → stream viewer page (dynamic ID)
 
 # General Guidelines
 

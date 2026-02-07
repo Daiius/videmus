@@ -20,16 +20,59 @@ type GuidanceRendererProps = {
 };
 
 /**
- * Extract expected page URL from step notes
+ * Extract expected page URL pattern from step notes
+ * Returns patterns like "/broadcast/[id]" or "/channel/[id]"
  */
 function extractExpectedPage(step: GuideStepType): string | undefined {
   if (step.notes) {
-    const urlMatch = step.notes.match(/\/[a-zA-Z0-9/_-]+/);
+    // Match URL patterns including [id] placeholders
+    const urlMatch = step.notes.match(/\/[a-zA-Z0-9/_[\]-]+/);
     if (urlMatch) {
       return urlMatch[0];
     }
   }
   return undefined;
+}
+
+/**
+ * Check if the current pathname matches an expected URL pattern
+ * Handles dynamic segments like [id] which match any value
+ *
+ * Examples:
+ *   matchesPagePattern("/broadcast/abc123", "/broadcast/[id]") → true
+ *   matchesPagePattern("/broadcast/abc123", "/broadcast/xyz789") → true (same depth, same prefix)
+ *   matchesPagePattern("/broadcast", "/channel") → false
+ */
+function matchesPagePattern(currentPath: string, expectedPattern: string): boolean {
+  const currentSegments = currentPath.split('/').filter(Boolean);
+  const expectedSegments = expectedPattern.split('/').filter(Boolean);
+
+  // Different depth → different page structure
+  if (currentSegments.length !== expectedSegments.length) {
+    return false;
+  }
+
+  for (let i = 0; i < expectedSegments.length; i++) {
+    const expected = expectedSegments[i];
+    const current = currentSegments[i];
+
+    // [id] or [slug] style placeholders match anything
+    if (expected.startsWith('[') && expected.endsWith(']')) {
+      continue;
+    }
+
+    // Static segments must match exactly
+    if (expected !== current) {
+      // If the expected segment looks like a concrete dynamic ID (not a known route),
+      // and the first segment (the route base) already matched, treat it as a dynamic segment
+      if (i > 0 && currentSegments[0] === expectedSegments[0]) {
+        continue;
+      }
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -135,10 +178,20 @@ export function GuidanceRenderer({
 
           // If this is the current step and element is missing, show fallback
           if (i === currentStepIndex) {
+            const expectedPage = extractExpectedPage(step);
+            const onCorrectPage = !expectedPage || matchesPagePattern(pathname, expectedPage);
+
             setShowFallback(true);
-            setFallbackMessage(
-              `ステップ ${step.stepNumber} の対象要素が見つかりません。正しいページにいることを確認してください。`
-            );
+            if (onCorrectPage) {
+              // We're on the right page pattern, but selector didn't match
+              setFallbackMessage(
+                `ステップ ${step.stepNumber} の対象要素がページ上に見つかりません。ページの状態が変わった可能性があります。`
+              );
+            } else {
+              setFallbackMessage(
+                `ステップ ${step.stepNumber} の対象要素が見つかりません。正しいページにいることを確認してください。`
+              );
+            }
             return;
           }
         }
@@ -221,13 +274,18 @@ export function GuidanceRenderer({
     };
   }, [guide, currentStepIndex, pathname]);
 
+  // Determine if expected page is actually a different page vs just element not found
+  const currentStepForRender = guide.steps[currentStepIndex];
+  const expectedPage = currentStepForRender ? extractExpectedPage(currentStepForRender) : undefined;
+  const isOnCorrectPage = !expectedPage || matchesPagePattern(pathname, expectedPage);
+
   return (
     <>
       {showFallback && (
         <WrongPageNotification
           message={fallbackMessage}
-          stepNumber={guide.steps[currentStepIndex]?.stepNumber ?? 0}
-          expectedPage={extractExpectedPage(guide.steps[currentStepIndex])}
+          stepNumber={currentStepForRender?.stepNumber ?? 0}
+          expectedPage={isOnCorrectPage ? undefined : expectedPage}
           currentPage={pathname}
           onNavigate={(url) => {
             window.location.href = url;
