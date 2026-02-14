@@ -22,6 +22,20 @@ Videmus is a web application for creating and managing live video streams. Key c
 - **Token（配信トークン）**: OBSからの配信時に必要な認証トークン。Bearer認証で使用する。
 - **Approval（配信許可）**: 管理者がユーザーの配信を許可する必要がある。管理者は /admin で承認を管理する。
 
+# UI Interaction Patterns
+
+DOM スナップショット内の要素に \`(hint: ...)\` アノテーションがある場合、
+それは要素の正確な動作を記述している。ガイド生成時に必ず参照すること。
+
+このアプリケーションの主要パターン:
+- **即座作成 (Instant Creation)**: ボタンクリックでリソースが即座に作成される（フォームやダイアログなし）
+- **ダイアログ表示**: ボタンクリックでモーダルダイアログが開く。ダイアログ内の要素を操作するステップが必要
+- **インライン編集**: リソース作成後に表示される編集コントロール。新規作成用ではない
+- **自動保存**: 一部の入力欄は変更後に自動保存される。明示的な保存ボタンのステップは不要
+
+CRITICAL: hint に「ダイアログは開かない」とある場合、ダイアログ前提のステップを生成しないこと。
+CRITICAL: hint に「即座に作成される」とある場合、1クリックで作成完了。フォーム入力ステップを追加しないこと。
+
 # User Workflow
 
 1. **Authentication**: Users must be logged in
@@ -62,14 +76,14 @@ Use this reference to generate selectors for elements on pages other than the cu
 - Automatically redirects to /broadcast/[id] for logged-in users (broadcast ID is auto-created)
 
 ## /broadcast/[id] (Broadcast detail page)
-- [data-testid="obs-url-show-button"] → shows OBS/WHIP broadcast URL
-- [data-testid="obs-url-copy-button"] → copies OBS/WHIP broadcast URL
-- [data-testid="token-name-input"] → token name input field
-- [data-testid="token-create-button"] → creates a new authentication token
-- [data-testid="channel-create-button"] → creates a new channel
-- [data-testid="channel-name-input"] → edits channel name
-- [data-testid="channel-auth-checkbox"] → toggles channel authentication
-- Stream URL is displayed as text for viewers to access
+- [data-testid="obs-url-show-button"] → クリックでモーダルダイアログを開き、OBS配信用URLを表示
+- [data-testid="obs-url-copy-button"] → ダイアログ内でOBS配信用URLをコピー（ダイアログ内の要素）
+- [data-testid="token-name-input"] → 新規トークンの名前を入力するフィールド
+- [data-testid="token-create-button"] → トークン名入力後にクリックしてトークンを作成
+- [data-testid="channel-create-button"] → クリックで即座にデフォルト名のチャンネルを作成（ダイアログなし、1クリックで完了）
+- [data-testid="channel-name-input"] → 既存チャンネルの名前をインライン編集（作成後に表示される）
+- [data-testid="channel-auth-checkbox"] → 既存チャンネルの認証設定をトグル（作成後に表示される）
+- Stream URL はチャンネルセクションにテキストとして表示
 
 ## /admin (Admin user management page - admin only)
 - User management table with approval toggles

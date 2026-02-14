@@ -72,6 +72,7 @@ function traverseDOM(
   const tagName = element.tagName.toLowerCase();
   const ariaLabel = element.getAttribute('aria-label') || undefined;
   const id = element.id || undefined;
+  const guideHint = element.getAttribute('data-guide-hint') || undefined;
 
   // Build node
   const node: AccessibilityNode = {
@@ -83,6 +84,7 @@ function traverseDOM(
     tagName,
     ariaLabel,
     id,
+    guideHint,
     children: []
   };
 
@@ -190,6 +192,11 @@ export function serializeAccessibilityTree(snapshot: AccessibilityTreeSnapshot):
     // Selector
     if (node.isInteractive) {
       parts.push(`{${node.selector}}`);
+    }
+
+    // Guide hint
+    if (node.guideHint) {
+      parts.push(`(hint: ${node.guideHint})`);
     }
 
     lines.push(`${indent}- ${parts.join(' ')}`);

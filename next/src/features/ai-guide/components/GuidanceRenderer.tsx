@@ -95,6 +95,55 @@ function matchesPagePattern(currentPath: string, expectedPattern: string): boole
 }
 
 /**
+ * Check if an element is inside a dialog and return dialog-aware config
+ * When the target element is inside a dialog, we highlight the dialog panel instead
+ * to avoid positioning issues with elements inside fixed/absolute containers.
+ */
+function getDialogAwareConfig(selector: string): {
+  targetSelector: string;
+  extraDescription: string;
+  side: 'top' | 'bottom' | 'left' | 'right';
+} | null {
+  let element: Element | null = null;
+  try {
+    element = document.querySelector(selector);
+  } catch {
+    return null;
+  }
+
+  if (!element) return null;
+
+  const dialog = element.closest('[role="dialog"]');
+  if (!dialog) return null;
+
+  // Get the dialog panel (the visible container, not the root dialog element)
+  const dialogPanel = dialog.querySelector('[class*="DialogPanel"], [class*="dialog-panel"]')
+    ?? dialog;
+
+  // Build a selector for the open dialog panel
+  const dialogSelector = '[role="dialog"]:not([data-closed])';
+
+  // Try to find a descriptive name for the target element
+  const targetName = element.getAttribute('aria-label')
+    || element.textContent?.trim().slice(0, 30)
+    || '';
+
+  const extraDescription = targetName
+    ? `<p class="text-sm text-blue-400 mt-1">操作対象: ${targetName}</p>`
+    : '';
+
+  // Verify dialog panel is actually findable
+  const dialogEl = document.querySelector(dialogSelector);
+  if (!dialogEl) return null;
+
+  return {
+    targetSelector: dialogSelector,
+    extraDescription,
+    side: 'bottom' as const,
+  };
+}
+
+/**
  * Validate if a URL is a safe internal path
  * Only allows internal paths that match known safe patterns
  */
@@ -206,21 +255,23 @@ export function GuidanceRenderer({
         if (element) {
           if (i === currentStepIndex) {
             validCurrentIndex = driverSteps.length;
-
           }
 
           const isLast = i === guide.steps.length - 1;
+          const dialogConfig = getDialogAwareConfig(step.selector);
+
           driverSteps.push({
-            element: step.selector,
+            element: dialogConfig ? dialogConfig.targetSelector : step.selector,
             popover: {
               title: `ステップ ${step.stepNumber}/${guide.totalSteps}`,
               description: `
                 <div>
                   <p class="mb-2">${step.description}</p>
+                  ${dialogConfig ? dialogConfig.extraDescription : ''}
                   ${step.notes ? `<p class="text-sm text-gray-400">${step.notes}</p>` : ''}
                 </div>
               `,
-              side: 'left' as const,
+              side: dialogConfig ? dialogConfig.side : 'left' as const,
               align: 'start' as const,
               showButtons: ['next', 'previous', 'close'],
               nextBtnText: isLast ? '完了' : '次へ',
@@ -250,12 +301,16 @@ export function GuidanceRenderer({
           }
         }
       } else {
-        // Steps without selectors (observe/navigate) — add as popover-only
+        // Steps without selectors (observe/navigate)
         if (i === currentStepIndex) {
           validCurrentIndex = driverSteps.length;
         }
 
-        driverSteps.push({
+        // If a dialog is open, anchor the popover to it instead of floating
+        const openDialogEl = document.querySelector('[role="dialog"]:not([data-closed])');
+        const dialogAnchor = openDialogEl ? '[role="dialog"]:not([data-closed])' : undefined;
+
+        const driveStep: DriveStep = {
           popover: {
             title: `ステップ ${step.stepNumber}/${guide.totalSteps}`,
             description: `
@@ -264,14 +319,20 @@ export function GuidanceRenderer({
                 ${step.notes ? `<p class="text-sm text-gray-400">${step.notes}</p>` : ''}
               </div>
             `,
-            side: 'left' as const,
+            side: dialogAnchor ? 'bottom' as const : 'left' as const,
             align: 'start' as const,
             showButtons: ['next', 'previous', 'close'],
             nextBtnText: i === guide.steps.length - 1 ? '完了' : '次へ',
             prevBtnText: '戻る',
             doneBtnText: '完了'
           }
-        });
+        };
+
+        if (dialogAnchor) {
+          driveStep.element = dialogAnchor;
+        }
+
+        driverSteps.push(driveStep);
       }
     }
 
@@ -294,7 +355,10 @@ export function GuidanceRenderer({
     // Initialize Driver.js
     const driverObj = driver({
       showProgress: true,
-      overlayOpacity: 0,
+      overlayOpacity: 0.15,
+      overlayColor: '#000',
+      stagePadding: 6,
+      stageRadius: 4,
       allowClose: false,
       steps: driverSteps,
       onNextClick: () => {

@@ -115,12 +115,14 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
             className='flex-1'
             data-testid="token-name-input"
             aria-label="トークン名"
+            data-guide-hint="新しいトークンの名前を入力する欄。作成ボタンと組み合わせて使用する。"
           />
           <Button
             onClick={handleCreate}
             disabled={isCreating || !newTokenName.trim()}
             data-testid="token-create-button"
             aria-label="トークンを作成"
+            data-guide-hint="トークン名を入力後、クリックで認証トークンを作成。作成後トークン値が一度だけ表示される。"
           >
             <PlusIcon className='size-5' />
             作成

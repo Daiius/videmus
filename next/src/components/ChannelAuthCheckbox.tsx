@@ -51,6 +51,7 @@ const ChannelAuthCheckbox: React.FC<ChannelAuthCheckboxProps> = ({
         className='w-4 h-4'
         data-testid="channel-auth-checkbox"
         aria-label="視聴に認証が必要"
+        data-guide-hint="チャンネルの視聴認証をトグル。変更は即座にサーバーに保存される。"
       />
       <span className='text-sm'>視聴に認証が必要</span>
     </label>

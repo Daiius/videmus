@@ -1,12 +1,9 @@
-/* backdrop(overlay)を無効化（子のSVG pathも含む） */
-.driver-overlay,
-.driver-overlay * {
+/* overlay: クリックスルーを維持 */
+.driver-overlay {
   pointer-events: none !important;
-  opacity: 0 !important;
 }
 
-/* outline でハイライト */
+/* active element: box-shadow で補助的ハイライト */
 .driver-active-element {
-  outline: 3px solid #3b82f6 !important;
-  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px #3b82f6, 0 0 12px 2px rgba(59, 130, 246, 0.3) !important;
 }

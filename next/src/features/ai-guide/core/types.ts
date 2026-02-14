@@ -24,6 +24,8 @@ export type AccessibilityNode = {
   ariaLabel?: string;
   /** Element ID */
   id?: string;
+  /** Behavioral hint for AI guide generation (from data-guide-hint attribute) */
+  guideHint?: string;
 };
 
 /**

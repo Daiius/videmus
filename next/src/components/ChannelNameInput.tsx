@@ -37,6 +37,7 @@ const ChannelNameInput = ({
       }
       data-testid="channel-name-input"
       aria-label="チャンネル名"
+      data-guide-hint="既存チャンネルの名前をインライン編集する。変更は1秒後に自動保存。新規作成の入力欄ではない。"
     />
   )
 }
