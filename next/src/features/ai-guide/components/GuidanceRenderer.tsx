@@ -355,10 +355,7 @@ export function GuidanceRenderer({
     // Initialize Driver.js
     const driverObj = driver({
       showProgress: true,
-      overlayOpacity: 0.15,
-      overlayColor: '#000',
-      stagePadding: 6,
-      stageRadius: 4,
+      overlayOpacity: 0,
       allowClose: false,
       steps: driverSteps,
       onNextClick: () => {
