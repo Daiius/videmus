@@ -39,6 +39,7 @@ const CreateChannelButton = ({
       onClick={handleClick}
       data-testid="channel-create-button"
       aria-label="チャンネルを追加"
+      data-guide-hint="クリックでデフォルト名「新しいチャンネル」のチャンネルを即座に作成。ダイアログは開かない。作成後、チャンネル一覧にインラインの編集コントロールが表示される。"
     >
       <PlusIcon className='size-5' />
       チャンネルの追加

@@ -15,23 +15,38 @@ export function buildSystemPrompt(): string {
 
 Videmus is a web application for creating and managing live video streams. Key concepts:
 
-- **Broadcast ID**: A unique identifier for a broadcast session. A broadcast ID is automatically assigned when a user first visits the broadcast page.
-- **Channel**: A streaming endpoint. Users can create multiple channels under a broadcast ID.
-- **Token**: Authentication token required for streaming to a channel.
-- **Stream URL**: The URL viewers use to watch the broadcast.
-- **OBS URL**: The RTMP URL used by OBS (broadcasting software) to send video.
-- **Approval**: Admin must approve users before broadcasting is enabled. Admins manage approvals at /admin.
+- **Broadcast ID（配信ID）**: 配信セッションの一意の識別子。ユーザーがログインして配信ページにアクセスすると自動で1つ付与され、永続的に存在する。
+- **Channel（配信チャンネル）**: 配信IDに紐づくストリーミングエンドポイント。配信IDの作成時にデフォルトで1つ作成される。配信IDごとに最大5チャンネルまで追加作成可能。各チャンネルには固有の **視聴URL（Stream URL）** が1つ設定される。アクティブなチャンネルのみが配信を受け取れる。チャンネルの作成・管理は /broadcast/[id] ページから行う。
+- **Stream URL（視聴URL）**: 視聴者がブラウザでアクセスして配信を視聴するためのURL。チャンネルごとに1つ存在し、/broadcast/[id] ページのチャンネル一覧にテキストとして表示されている。配信用URL（OBS URL）とは別物。
+- **OBS URL（配信用URL）**: OBS等の配信ソフトが映像を送信するためのWHIP URL。配信IDに対して1つ存在し、「OBS配信用URLを表示」ボタンで確認できる。視聴URLとは用途が異なる。
+- **Token（配信トークン）**: OBSからの配信時に必要な認証トークン。Bearer認証で使用する。
+- **Approval（配信許可）**: 管理者がユーザーの配信を許可する必要がある。管理者は /admin で承認を管理する。
+
+# UI Interaction Patterns
+
+DOM スナップショット内の要素に \`(hint: ...)\` アノテーションがある場合、
+それは要素の正確な動作を記述している。ガイド生成時に必ず参照すること。
+
+このアプリケーションの主要パターン:
+- **即座作成 (Instant Creation)**: ボタンクリックでリソースが即座に作成される（フォームやダイアログなし）
+- **ダイアログ表示**: ボタンクリックでモーダルダイアログが開く。ダイアログ内の要素を操作するステップが必要
+- **インライン編集**: リソース作成後に表示される編集コントロール。新規作成用ではない
+- **自動保存**: 一部の入力欄は変更後に自動保存される。明示的な保存ボタンのステップは不要
+
+CRITICAL: hint に「ダイアログは開かない」とある場合、ダイアログ前提のステップを生成しないこと。
+CRITICAL: hint に「即座に作成される」とある場合、1クリックで作成完了。フォーム入力ステップを追加しないこと。
 
 # User Workflow
 
 1. **Authentication**: Users must be logged in
-2. **Visit Broadcast Page**: Navigate to /broadcast → broadcast ID is automatically created
+2. **Visit Broadcast Page**: Navigate to /broadcast → broadcast ID is automatically created, with one default channel
 3. **Wait for Approval**: Admin must approve your account at /admin
-4. **Create Channel**: On /broadcast/[id]
-5. **Get OBS URL**: On /broadcast/[id]
-6. **Create Token**: Generate auth token for OBS
-7. **Start Streaming**: Use OBS to stream
-8. **Share Stream URL**: Share viewer URL
+4. **Get OBS URL**: On /broadcast/[id], click "OBS配信用URLを表示" button to view the broadcast URL for OBS
+5. **Create Token**: Generate auth token for OBS on /broadcast/[id]
+6. **Start Streaming**: Configure OBS with OBS URL and token, then start streaming
+7. **Share Stream URL**: The stream/viewing URL is displayed in the channel section of /broadcast/[id] — share it with viewers
+
+Note: Steps 4-6 are about BROADCASTING (sending video). Step 7 is about VIEWING (watching video). The Stream URL (for viewers) and OBS URL (for broadcasters) serve different purposes and are shown in different sections of the page.
 
 # CRITICAL: Start from the Current Page
 
@@ -61,14 +76,14 @@ Use this reference to generate selectors for elements on pages other than the cu
 - Automatically redirects to /broadcast/[id] for logged-in users (broadcast ID is auto-created)
 
 ## /broadcast/[id] (Broadcast detail page)
-- [data-testid="obs-url-show-button"] → shows OBS/WHIP broadcast URL
-- [data-testid="obs-url-copy-button"] → copies OBS/WHIP broadcast URL
-- [data-testid="token-name-input"] → token name input field
-- [data-testid="token-create-button"] → creates a new authentication token
-- [data-testid="channel-create-button"] → creates a new channel
-- [data-testid="channel-name-input"] → edits channel name
-- [data-testid="channel-auth-checkbox"] → toggles channel authentication
-- Stream URL is displayed as text for viewers to access
+- [data-testid="obs-url-show-button"] → クリックでモーダルダイアログを開き、OBS配信用URLを表示
+- [data-testid="obs-url-copy-button"] → ダイアログ内でOBS配信用URLをコピー（ダイアログ内の要素）
+- [data-testid="token-name-input"] → 新規トークンの名前を入力するフィールド
+- [data-testid="token-create-button"] → トークン名入力後にクリックしてトークンを作成
+- [data-testid="channel-create-button"] → クリックで即座にデフォルト名のチャンネルを作成（ダイアログなし、1クリックで完了）
+- [data-testid="channel-name-input"] → 既存チャンネルの名前をインライン編集（作成後に表示される）
+- [data-testid="channel-auth-checkbox"] → 既存チャンネルの認証設定をトグル（作成後に表示される）
+- Stream URL はチャンネルセクションにテキストとして表示
 
 ## /admin (Admin user management page - admin only)
 - User management table with approval toggles
@@ -164,12 +179,37 @@ export function buildUserPrompt(
 ): string {
   const serializedDOM = serializeAccessibilityTree(domSnapshot);
 
+  // Build user context text
+  let userContextText = '';
+  if (domSnapshot.userContext) {
+    const ctx = domSnapshot.userContext;
+    userContextText = `
+User Context:
+- Logged in: ${ctx.isLoggedIn ? 'Yes' : 'No'}
+- Admin: ${ctx.isAdmin ? 'Yes' : 'No'}`;
+
+    if (ctx.broadcast) {
+      userContextText += `
+- Broadcast ID: ${ctx.broadcast.broadcastId}
+- Approved: ${ctx.broadcast.isApproved ? 'Yes (can broadcast)' : 'No (waiting for admin approval)'}
+- Channels: ${ctx.broadcast.hasChannels ? `${ctx.broadcast.channelCount} channel(s)` : 'No channels yet'}
+- Current Channel: ${ctx.broadcast.currentChannelId || 'None'}`;
+    } else {
+      userContextText += `
+- Broadcast: Not created yet`;
+    }
+  }
+
   return `User Goal: ${userGoal}
+${userContextText}
 
 Current Page DOM Snapshot (this is what the user currently sees):
 ${serializedDOM}
 
 Generate a step-by-step guide starting from this page. CRITICAL RULES:
+- Consider the user's current state (approval status, channels, etc.) when generating the guide
+- If the user is not approved, guide them to wait for admin approval or contact admin
+- If the user has no channels, guide them to create one if needed for their goal
 - Step 1 MUST target an element that exists in the DOM snapshot above
 - If navigation to another page is needed, first include a step to click a link/button visible above
 - For elements on other pages, use data-testid selectors from the Known Elements list in your instructions

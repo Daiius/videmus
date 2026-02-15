@@ -65,7 +65,6 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
         ...prev,
       ])
       setNewTokenName('')
-      setVisibleTokenId(result.id)
     } catch {
       // ignore
     } finally {
@@ -115,12 +114,14 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
             className='flex-1'
             data-testid="token-name-input"
             aria-label="トークン名"
+            data-guide-hint="新しいトークンの名前を入力する欄。作成ボタンと組み合わせて使用する。"
           />
           <Button
             onClick={handleCreate}
             disabled={isCreating || !newTokenName.trim()}
             data-testid="token-create-button"
             aria-label="トークンを作成"
+            data-guide-hint="トークン名を入力後、クリックで認証トークンを作成。作成後トークン値が一度だけ表示される。"
           >
             <PlusIcon className='size-5' />
             作成
@@ -155,7 +156,7 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
 
                 {/* トークン値の表示（新規作成時のみ） */}
                 {token.tokenValue && (
-                  <div className='flex flex-row items-center gap-2 bg-yellow-50 p-2 rounded'>
+                  <div className='flex flex-row items-center gap-2 bg-yellow-900/30 border border-yellow-700 p-2 rounded'>
                     <code className='text-xs flex-1 break-all'>
                       {visibleTokenId === token.id
                         ? token.tokenValue

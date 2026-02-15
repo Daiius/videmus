@@ -24,6 +24,26 @@ export type AccessibilityNode = {
   ariaLabel?: string;
   /** Element ID */
   id?: string;
+  /** Behavioral hint for AI guide generation (from data-guide-hint attribute) */
+  guideHint?: string;
+};
+
+/**
+ * User context for guide generation
+ */
+export type UserContext = {
+  /** Whether user is logged in */
+  isLoggedIn: boolean;
+  /** Whether user is admin */
+  isAdmin: boolean;
+  /** Broadcast information if available */
+  broadcast?: {
+    broadcastId: string;
+    isApproved: boolean;
+    hasChannels: boolean;
+    channelCount: number;
+    currentChannelId: string | null;
+  };
 };
 
 /**
@@ -36,6 +56,8 @@ export type AccessibilityTreeSnapshot = {
   url: string;
   /** Root nodes of the accessibility tree */
   nodes: AccessibilityNode[];
+  /** User context for personalized guide generation */
+  userContext?: UserContext;
 };
 
 /**

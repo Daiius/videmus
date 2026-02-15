@@ -1,0 +1,24 @@
+/* backdrop(overlay)を無効化（子のSVG pathも含む） */
+.driver-overlay,
+.driver-overlay * {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Driver.js が直接親要素に強制する overflow:hidden を無効化 */
+:not(body):has(>.driver-active-element) {
+  overflow: visible !important;
+}
+
+/* Driver.js が .driver-active * に pointer-events:none を強制するが、
+   ダイアログ（HeadlessUI等）は操作可能にする */
+[role="dialog"],
+[role="dialog"] * {
+  pointer-events: auto !important;
+}
+
+/* outline でハイライト */
+.driver-active-element {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}

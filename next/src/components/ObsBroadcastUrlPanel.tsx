@@ -41,6 +41,7 @@ const ObsBroadcastUrlPanel = ({
         onClick={() => setIsOpen(true)}
         data-testid="obs-url-show-button"
         aria-label="OBS配信用URLを表示"
+        data-guide-hint="クリックでモーダルダイアログを開き、OBS配信用URLを表示する。"
       >
         表示
       </Button>
@@ -90,6 +91,7 @@ const ObsBroadcastUrlPanel = ({
                 }}
                 data-testid="obs-url-copy-button"
                 aria-label={isCopied ? 'コピー済み' : 'URLをコピー'}
+                data-guide-hint="OBS配信用URLをクリップボードにコピーする。"
               >
                 {isCopied
                   ? <ClipboardDocumentCheckIcon className='size-6' aria-hidden='true' />

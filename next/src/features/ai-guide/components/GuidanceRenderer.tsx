@@ -5,9 +5,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import './driver-overrides.css';
 import type { GuideResult, GuideStep as GuideStepType } from '../core/types';
 import { WrongPageNotification } from './WrongPageNotification';
 
@@ -94,6 +95,83 @@ function matchesPagePattern(currentPath: string, expectedPattern: string): boole
 }
 
 /**
+ * Find the visible HeadlessUI dialog panel selector.
+ * The root [role="dialog"] element is portaled to <body> end by HeadlessUI
+ * and has incorrect getBoundingClientRect() (y near viewport bottom, height 0).
+ * The actual visible panel has a HeadlessUI-generated ID with correct coordinates.
+ * Note: [role="dialog"] cannot be used because Driver.js popover also has that role.
+ */
+function getDialogPanelSelector(): string | null {
+  const panel = document.querySelector('[id^="headlessui-dialog-panel"]');
+  if (panel?.id) {
+    return `#${CSS.escape(panel.id)}`;
+  }
+  return null;
+}
+
+/**
+ * Check if an element is inside a dialog and return dialog-aware config.
+ * Provides extra description and popover positioning for dialog-internal elements.
+ */
+function getDialogAwareConfig(selector: string): {
+  extraDescription: string;
+  side: 'top' | 'bottom' | 'left' | 'right';
+} | null {
+  let element: Element | null = null;
+  try {
+    element = document.querySelector(selector);
+  } catch {
+    return null;
+  }
+
+  if (!element) return null;
+
+  const dialog = element.closest('[id^="headlessui-dialog-"]');
+  if (!dialog) return null;
+
+  // Try to find a descriptive name for the target element
+  const targetName = element.getAttribute('aria-label')
+    || element.textContent?.trim().slice(0, 30)
+    || '';
+
+  const extraDescription = targetName
+    ? `<p class="text-sm text-blue-400 mt-1">操作対象: ${targetName}</p>`
+    : '';
+
+  return {
+    extraDescription,
+    side: 'bottom' as const,
+  };
+}
+
+/**
+ * Validate if a URL is a safe internal path
+ * Only allows internal paths that match known safe patterns
+ */
+function isSafeInternalPath(url: string): boolean {
+  // Block absolute URLs (external sites)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return false;
+  }
+
+  // Only allow paths starting with /
+  if (!url.startsWith('/')) {
+    return false;
+  }
+
+  // Whitelist of safe path patterns
+  const safePatterns = [
+    /^\/$/,                              // Home
+    /^\/broadcast$/,                     // Broadcast page
+    /^\/broadcast\/[a-zA-Z0-9-_]+$/,     // Broadcast detail
+    /^\/stream\/[a-zA-Z0-9-_]+$/,        // Stream viewer
+    /^\/admin$/,                         // Admin page
+  ];
+
+  return safePatterns.some(pattern => pattern.test(url));
+}
+
+/**
  * Component for rendering visual guidance using Driver.js
  * Supports page navigation detection and element validation
  */
@@ -105,7 +183,9 @@ export function GuidanceRenderer({
   onComplete
 }: GuidanceRendererProps) {
   const driverRef = useRef<Driver | null>(null);
+  const isAutoAdvancingRef = useRef(false);
   const pathname = usePathname();
+  const router = useRouter();
   const previousPathname = useRef(pathname);
   const [showFallback, setShowFallback] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState('');
@@ -149,6 +229,8 @@ export function GuidanceRenderer({
 
   // Initialize Driver.js for current step
   useEffect(() => {
+    isAutoAdvancingRef.current = false;
+
     const currentStep = guide.steps[currentStepIndex];
     if (!currentStep) {
       onCompleteRef.current();
@@ -174,10 +256,11 @@ export function GuidanceRenderer({
         if (element) {
           if (i === currentStepIndex) {
             validCurrentIndex = driverSteps.length;
-
           }
 
           const isLast = i === guide.steps.length - 1;
+          const dialogConfig = getDialogAwareConfig(step.selector);
+
           driverSteps.push({
             element: step.selector,
             popover: {
@@ -185,10 +268,11 @@ export function GuidanceRenderer({
               description: `
                 <div>
                   <p class="mb-2">${step.description}</p>
+                  ${dialogConfig ? dialogConfig.extraDescription : ''}
                   ${step.notes ? `<p class="text-sm text-gray-400">${step.notes}</p>` : ''}
                 </div>
               `,
-              side: 'left' as const,
+              side: dialogConfig ? dialogConfig.side : 'left' as const,
               align: 'start' as const,
               showButtons: ['next', 'previous', 'close'],
               nextBtnText: isLast ? '完了' : '次へ',
@@ -218,12 +302,15 @@ export function GuidanceRenderer({
           }
         }
       } else {
-        // Steps without selectors (observe/navigate) — add as popover-only
+        // Steps without selectors (observe/navigate)
         if (i === currentStepIndex) {
           validCurrentIndex = driverSteps.length;
         }
 
-        driverSteps.push({
+        // If a dialog is open, anchor the popover to the visible dialog panel
+        const dialogAnchor = getDialogPanelSelector() ?? undefined;
+
+        const driveStep: DriveStep = {
           popover: {
             title: `ステップ ${step.stepNumber}/${guide.totalSteps}`,
             description: `
@@ -232,14 +319,20 @@ export function GuidanceRenderer({
                 ${step.notes ? `<p class="text-sm text-gray-400">${step.notes}</p>` : ''}
               </div>
             `,
-            side: 'left' as const,
+            side: dialogAnchor ? 'bottom' as const : 'left' as const,
             align: 'start' as const,
             showButtons: ['next', 'previous', 'close'],
             nextBtnText: i === guide.steps.length - 1 ? '完了' : '次へ',
             prevBtnText: '戻る',
             doneBtnText: '完了'
           }
-        });
+        };
+
+        if (dialogAnchor) {
+          driveStep.element = dialogAnchor;
+        }
+
+        driverSteps.push(driveStep);
       }
     }
 
@@ -262,6 +355,8 @@ export function GuidanceRenderer({
     // Initialize Driver.js
     const driverObj = driver({
       showProgress: true,
+      overlayOpacity: 0,
+      allowClose: false,
       steps: driverSteps,
       onNextClick: () => {
         if (currentStepIndex < guide.steps.length - 1) {
@@ -279,8 +374,19 @@ export function GuidanceRenderer({
         }
       },
       onDestroyStarted: () => {
-        onCompleteRef.current();
-        driverRef.current = null;
+        // ダイアログが閉じている最中はフォーカス解放で destroy が呼ばれるが、
+        // Driver.js の破棄自体を防止して popover を維持する
+        const dialogClosing = document.querySelector('[id^="headlessui-dialog-"][data-closed]');
+        if (dialogClosing || isAutoAdvancingRef.current) {
+          return; // destroy() を呼ばないことで Driver.js の破棄を防止
+        }
+
+        // cleanup からの destroy では driverRef.current が既に null
+        // ユーザが Close ボタンを押した場合のみガイド完了
+        if (driverRef.current) {
+          onCompleteRef.current();
+          driverRef.current = null;
+        }
         driverObj.destroy();
       }
     });
@@ -288,10 +394,67 @@ export function GuidanceRenderer({
     driverRef.current = driverObj;
     driverObj.drive(validCurrentIndex);
 
+    // click アクションの場合、対象要素のクリックでステップを自動進行
+    let clickCleanup: (() => void) | undefined;
+    if (currentStep.action === 'click' && currentStep.selector) {
+      const targetEl = document.querySelector(currentStep.selector);
+      if (targetEl) {
+        const handleClick = () => {
+          // ダイアログ等の表示アニメーション完了を待つ
+          isAutoAdvancingRef.current = true;
+          setTimeout(() => {
+            if (currentStepIndex < guide.steps.length - 1) {
+              onNextStepRef.current();
+            } else {
+              onCompleteRef.current();
+              driverObj.destroy();
+            }
+          }, 500);
+        };
+        targetEl.addEventListener('click', handleClick, { once: true });
+        clickCleanup = () => targetEl.removeEventListener('click', handleClick);
+      }
+    }
+
+    // ダイアログ閉じを検知して自動進行
+    let dialogObserverCleanup: (() => void) | undefined;
+    const openDialog = document.querySelector(
+      '[id^="headlessui-dialog-"]:not([id*="panel"]):not([data-closed])'
+    );
+    if (openDialog) {
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (
+            mutation.type === 'attributes' &&
+            mutation.attributeName === 'data-closed'
+          ) {
+            // ダイアログが閉じた → 次のステップへ
+            isAutoAdvancingRef.current = true;
+            setTimeout(() => {
+              if (currentStepIndex < guide.steps.length - 1) {
+                onNextStepRef.current();
+              } else {
+                onCompleteRef.current();
+                driverObj.destroy();
+              }
+            }, 500);
+            observer.disconnect();
+            break;
+          }
+        }
+      });
+      observer.observe(openDialog, { attributes: true });
+      dialogObserverCleanup = () => observer.disconnect();
+    }
+
     return () => {
+      clickCleanup?.();
+      dialogObserverCleanup?.();
       if (driverRef.current) {
-        driverRef.current.destroy();
+        // null を先にセットして onDestroyStarted でガイド完了を防ぐ
+        const d = driverRef.current;
         driverRef.current = null;
+        d.destroy();
       }
     };
   }, [guide, currentStepIndex, pathname]);
@@ -310,7 +473,15 @@ export function GuidanceRenderer({
           expectedPage={navigationTarget}
           currentPage={pathname}
           onNavigate={(url) => {
-            window.location.href = url;
+            // Validate URL before navigation
+            if (!isSafeInternalPath(url)) {
+              console.error('Unsafe navigation blocked:', url);
+              alert('安全でないページ遷移がブロックされました。');
+              return;
+            }
+
+            // Use Next.js router for client-side navigation
+            router.push(url);
           }}
           onSkip={() => {
             setShowFallback(false);
