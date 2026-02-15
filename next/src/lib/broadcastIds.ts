@@ -1,4 +1,4 @@
-import { serverClient } from './api'
+import { serverClient } from './api-server'
 
 export type Channel = {
   id: string
