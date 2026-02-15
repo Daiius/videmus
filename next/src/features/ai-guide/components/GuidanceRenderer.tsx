@@ -95,12 +95,25 @@ function matchesPagePattern(currentPath: string, expectedPattern: string): boole
 }
 
 /**
- * Check if an element is inside a dialog and return dialog-aware config
- * When the target element is inside a dialog, we highlight the dialog panel instead
- * to avoid positioning issues with elements inside fixed/absolute containers.
+ * Find the visible HeadlessUI dialog panel selector.
+ * The root [role="dialog"] element is portaled to <body> end by HeadlessUI
+ * and has incorrect getBoundingClientRect() (y near viewport bottom, height 0).
+ * The actual visible panel has a HeadlessUI-generated ID with correct coordinates.
+ * Note: [role="dialog"] cannot be used because Driver.js popover also has that role.
+ */
+function getDialogPanelSelector(): string | null {
+  const panel = document.querySelector('[id^="headlessui-dialog-panel"]');
+  if (panel?.id) {
+    return `#${CSS.escape(panel.id)}`;
+  }
+  return null;
+}
+
+/**
+ * Check if an element is inside a dialog and return dialog-aware config.
+ * Provides extra description and popover positioning for dialog-internal elements.
  */
 function getDialogAwareConfig(selector: string): {
-  targetSelector: string;
   extraDescription: string;
   side: 'top' | 'bottom' | 'left' | 'right';
 } | null {
@@ -113,15 +126,8 @@ function getDialogAwareConfig(selector: string): {
 
   if (!element) return null;
 
-  const dialog = element.closest('[role="dialog"]');
+  const dialog = element.closest('[id^="headlessui-dialog-"]');
   if (!dialog) return null;
-
-  // Get the dialog panel (the visible container, not the root dialog element)
-  const dialogPanel = dialog.querySelector('[class*="DialogPanel"], [class*="dialog-panel"]')
-    ?? dialog;
-
-  // Build a selector for the open dialog panel
-  const dialogSelector = '[role="dialog"]:not([data-closed])';
 
   // Try to find a descriptive name for the target element
   const targetName = element.getAttribute('aria-label')
@@ -132,12 +138,7 @@ function getDialogAwareConfig(selector: string): {
     ? `<p class="text-sm text-blue-400 mt-1">操作対象: ${targetName}</p>`
     : '';
 
-  // Verify dialog panel is actually findable
-  const dialogEl = document.querySelector(dialogSelector);
-  if (!dialogEl) return null;
-
   return {
-    targetSelector: dialogSelector,
     extraDescription,
     side: 'bottom' as const,
   };
@@ -261,7 +262,7 @@ export function GuidanceRenderer({
           const dialogConfig = getDialogAwareConfig(step.selector);
 
           driverSteps.push({
-            element: dialogConfig ? dialogConfig.targetSelector : step.selector,
+            element: step.selector,
             popover: {
               title: `ステップ ${step.stepNumber}/${guide.totalSteps}`,
               description: `
@@ -306,9 +307,8 @@ export function GuidanceRenderer({
           validCurrentIndex = driverSteps.length;
         }
 
-        // If a dialog is open, anchor the popover to it instead of floating
-        const openDialogEl = document.querySelector('[role="dialog"]:not([data-closed])');
-        const dialogAnchor = openDialogEl ? '[role="dialog"]:not([data-closed])' : undefined;
+        // If a dialog is open, anchor the popover to the visible dialog panel
+        const dialogAnchor = getDialogPanelSelector() ?? undefined;
 
         const driveStep: DriveStep = {
           popover: {
@@ -376,7 +376,7 @@ export function GuidanceRenderer({
       onDestroyStarted: () => {
         // ダイアログが閉じている最中はフォーカス解放で destroy が呼ばれるが、
         // Driver.js の破棄自体を防止して popover を維持する
-        const dialogClosing = document.querySelector('[role="dialog"][data-closed]');
+        const dialogClosing = document.querySelector('[id^="headlessui-dialog-"][data-closed]');
         if (dialogClosing || isAutoAdvancingRef.current) {
           return; // destroy() を呼ばないことで Driver.js の破棄を防止
         }
@@ -419,7 +419,7 @@ export function GuidanceRenderer({
     // ダイアログ閉じを検知して自動進行
     let dialogObserverCleanup: (() => void) | undefined;
     const openDialog = document.querySelector(
-      '[role="dialog"]:not([data-closed])'
+      '[id^="headlessui-dialog-"]:not([id*="panel"]):not([data-closed])'
     );
     if (openDialog) {
       const observer = new MutationObserver((mutations) => {
