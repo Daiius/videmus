@@ -65,7 +65,6 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
         ...prev,
       ])
       setNewTokenName('')
-      setVisibleTokenId(result.id)
     } catch {
       // ignore
     } finally {
@@ -157,7 +156,7 @@ const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
 
                 {/* トークン値の表示（新規作成時のみ） */}
                 {token.tokenValue && (
-                  <div className='flex flex-row items-center gap-2 bg-yellow-50 p-2 rounded'>
+                  <div className='flex flex-row items-center gap-2 bg-yellow-900/30 border border-yellow-700 p-2 rounded'>
                     <code className='text-xs flex-1 break-all'>
                       {visibleTokenId === token.id
                         ? token.tokenValue
