@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-//import { Input as HeadlessInput } from '@headlessui/react';
 
 const Input: React.FC<
   React.ComponentProps<'input'>

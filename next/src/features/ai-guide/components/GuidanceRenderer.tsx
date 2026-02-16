@@ -95,16 +95,17 @@ function matchesPagePattern(currentPath: string, expectedPattern: string): boole
 }
 
 /**
- * Find the visible HeadlessUI dialog panel selector.
- * The root [role="dialog"] element is portaled to <body> end by HeadlessUI
+ * Find the visible Base UI dialog panel selector.
+ * The root [role="dialog"] element is portaled to <body> end by Base UI
  * and has incorrect getBoundingClientRect() (y near viewport bottom, height 0).
- * The actual visible panel has a HeadlessUI-generated ID with correct coordinates.
+ * The actual visible panel has a data-videmus-dialog attribute with correct coordinates.
  * Note: [role="dialog"] cannot be used because Driver.js popover also has that role.
  */
 function getDialogPanelSelector(): string | null {
-  const panel = document.querySelector('[id^="headlessui-dialog-panel"]');
-  if (panel?.id) {
-    return `#${CSS.escape(panel.id)}`;
+  const panel = document.querySelector('[data-videmus-dialog]');
+  if (panel) {
+    const attr = panel.getAttribute('data-videmus-dialog');
+    return `[data-videmus-dialog="${attr}"]`;
   }
   return null;
 }
@@ -126,7 +127,7 @@ function getDialogAwareConfig(selector: string): {
 
   if (!element) return null;
 
-  const dialog = element.closest('[id^="headlessui-dialog-"]');
+  const dialog = element.closest('[data-videmus-dialog]');
   if (!dialog) return null;
 
   // Try to find a descriptive name for the target element
@@ -376,7 +377,8 @@ export function GuidanceRenderer({
       onDestroyStarted: () => {
         // ダイアログが閉じている最中はフォーカス解放で destroy が呼ばれるが、
         // Driver.js の破棄自体を防止して popover を維持する
-        const dialogClosing = document.querySelector('[id^="headlessui-dialog-"][data-closed]');
+        // Base UI はクローズアニメーション中に data-ending-style を、完了後に data-closed を付与
+        const dialogClosing = document.querySelector('[data-videmus-dialog][data-ending-style], [data-videmus-dialog][data-closed]');
         if (dialogClosing || isAutoAdvancingRef.current) {
           return; // destroy() を呼ばないことで Driver.js の破棄を防止
         }
@@ -417,29 +419,35 @@ export function GuidanceRenderer({
     }
 
     // ダイアログ閉じを検知して自動進行
+    // Base UI は開いているダイアログに data-open を付与し、閉じる際に削除する
     let dialogObserverCleanup: (() => void) | undefined;
     const openDialog = document.querySelector(
-      '[id^="headlessui-dialog-"]:not([id*="panel"]):not([data-closed])'
+      '[data-videmus-dialog][data-open]'
     );
     if (openDialog) {
       const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
-          if (
-            mutation.type === 'attributes' &&
-            mutation.attributeName === 'data-closed'
-          ) {
-            // ダイアログが閉じた → 次のステップへ
-            isAutoAdvancingRef.current = true;
-            setTimeout(() => {
-              if (currentStepIndex < guide.steps.length - 1) {
-                onNextStepRef.current();
-              } else {
-                onCompleteRef.current();
-                driverObj.destroy();
-              }
-            }, 500);
-            observer.disconnect();
-            break;
+          if (mutation.type === 'attributes') {
+            const attrName = mutation.attributeName;
+            // data-open の削除、または data-ending-style / data-closed の追加を検知
+            if (
+              (attrName === 'data-open' && !(mutation.target as Element).hasAttribute('data-open')) ||
+              attrName === 'data-ending-style' ||
+              attrName === 'data-closed'
+            ) {
+              // ダイアログが閉じた → 次のステップへ
+              isAutoAdvancingRef.current = true;
+              setTimeout(() => {
+                if (currentStepIndex < guide.steps.length - 1) {
+                  onNextStepRef.current();
+                } else {
+                  onCompleteRef.current();
+                  driverObj.destroy();
+                }
+              }, 500);
+              observer.disconnect();
+              break;
+            }
           }
         }
       });
