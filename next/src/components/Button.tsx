@@ -1,14 +1,14 @@
 import clsx from 'clsx';
 import { Button as BaseButton } from '@base-ui/react/button';
 
-const Button: React.FC<
-  React.ComponentProps<typeof BaseButton>
-> = ({
+type ButtonProps = React.ComponentProps<typeof BaseButton>;
+
+const Button = ({
   type = 'button',
   className,
   children,
   ...props
-}) => (
+}: ButtonProps) => (
   <BaseButton
     type={type}
     className={clsx(`

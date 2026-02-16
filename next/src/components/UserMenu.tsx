@@ -11,7 +11,7 @@ type UserMenuProps = {
   className?: string
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ className }) => {
+const UserMenu = ({ className }: UserMenuProps) => {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {

@@ -7,7 +7,7 @@ import type { AdminUser } from '@/lib/admin'
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json())
 
-const UserManagementTable: React.FC = () => {
+const UserManagementTable = () => {
   const { data: users, mutate, isLoading } = useSWR<AdminUser[]>(
     '/api/admin/users',
     fetcher,

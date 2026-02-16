@@ -38,10 +38,10 @@ type AuthProviderProps = {
   initialUser?: SessionUser | null
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({
+export const AuthProvider = ({
   children,
   initialUser = null,
-}) => {
+}: AuthProviderProps) => {
   const [user, setUser] = useState<SessionUser | null>(initialUser)
   const [isLoading, setIsLoading] = useState(!initialUser)
 
