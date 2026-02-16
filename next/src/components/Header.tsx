@@ -15,7 +15,7 @@ type HeaderProps = {
   user: SessionUser | null;
 };
 
-const Header: React.FC<HeaderProps> = ({ user }) => (
+const Header = ({ user }: HeaderProps) => (
   <header
     className={clsx(
       'w-full h-12 bg-header flex flex-row items-center',

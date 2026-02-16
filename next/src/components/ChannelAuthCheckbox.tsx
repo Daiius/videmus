@@ -12,12 +12,12 @@ type ChannelAuthCheckboxProps = {
   className?: string
 }
 
-const ChannelAuthCheckbox: React.FC<ChannelAuthCheckboxProps> = ({
+const ChannelAuthCheckbox = ({
   broadcastId,
   channelId,
   initialRequireAuth,
   className,
-}) => {
+}: ChannelAuthCheckboxProps) => {
   const [requireAuth, setRequireAuth] = useState(initialRequireAuth)
   const [isPending, startTransition] = useTransition()
 

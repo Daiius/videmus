@@ -11,12 +11,12 @@ type LoginButtonProps = {
   children?: React.ReactNode
 }
 
-const LoginButton: React.FC<LoginButtonProps> = ({
+const LoginButton = ({
   provider = 'github',
   callbackUrl,
   className,
   children,
-}) => {
+}: LoginButtonProps) => {
   const handleLogin = async () => {
     const callback = callbackUrl ?? window.location.href
     await signIn.social({

@@ -1,12 +1,11 @@
 import clsx from 'clsx';
-//import { Input as HeadlessInput } from '@headlessui/react';
 
-const Input: React.FC<
-  React.ComponentProps<'input'>
-> = ({
+type InputProps = React.ComponentProps<'input'>;
+
+const Input = ({
   className,
   ...props
-}) => (
+}: InputProps) => (
   <input
     className={clsx(
       'rounded-md',

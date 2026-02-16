@@ -28,10 +28,10 @@ type BroadcastTokenPanelProps = {
   className?: string
 }
 
-const BroadcastTokenPanel: React.FC<BroadcastTokenPanelProps> = ({
+const BroadcastTokenPanel = ({
   broadcastId,
   className,
-}) => {
+}: BroadcastTokenPanelProps) => {
   const [tokens, setTokens] = useState<TokenWithValue[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newTokenName, setNewTokenName] = useState('')
