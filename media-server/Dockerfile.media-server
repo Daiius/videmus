@@ -1,0 +1,15 @@
+FROM node:20-slim
+
+WORKDIR /workspace/media-server
+
+RUN npm install -g pnpm
+
+# monorepo root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
+# monorepo media-server
+COPY media-server/package.json media-server/tsconfig.json /workspace/media-server/
+
+RUN pnpm install --filter videmus-media-server
+
+
+CMD ["pnpm", "dev"]

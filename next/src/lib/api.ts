@@ -1,5 +1,5 @@
 import { hc } from 'hono/client'
-import type { AppType } from 'videmus-webrtc'
+import type { AppType } from 'videmus-resource-server'
 
 const fetchWithAuth: typeof fetch = async (
   input: RequestInfo | URL,

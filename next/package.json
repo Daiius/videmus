@@ -15,13 +15,13 @@
     "hono": "^4.9.8",
     "mediasoup-client": "^3.12.2",
     "nanoid": "^5.1.5",
-    "next": "16.1.2",
+    "next": "16.1.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "swr": "^2.3.8",
     "use-debounce": "^10.1.0",
     "uuid": "^11.1.0",
-    "videmus-webrtc": "workspace:*",
+    "videmus-resource-server": "workspace:*",
     "zod": "^4.3.5"
   },
   "devDependencies": {
