@@ -98,12 +98,12 @@ export const createWebRtcStreams = async (
     throw new Error(`failed to fetch comsumer parameters`);
   }
 
-  const consumerParameters: {
+  const consumerParameters = await consumerParametersResponse.json() as {
     id: string;
     producerId: string;
     kind: MediaKind;
     rtpParameters: RtpParameters;
-  }[] = await consumerParametersResponse.json();
+  }[];
   console.log(`[CLIENT] 4. consumers count: ${consumerParameters.length}, kinds: ${consumerParameters.map(c => c.kind).join(',')}`)
 
   // 生成されたconsumerはメモリ上に保持します
