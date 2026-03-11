@@ -16,41 +16,60 @@ services:
       - /workspace/database/node_modules
       - ./next:/workspace/next
       - /workspace/next/node_modules
-      - ./webrtc:/workspace/webrtc
-      - /workspace/webrtc/node_modules
+      - ./resource-server:/workspace/resource-server
+      - /workspace/resource-server/node_modules
       - /workspace/node_modules
     tmpfs:
       - /workspace/app/.next
 
-  videmus-webrtc:
+  videmus-resource-server:
     build:
-      dockerfile: ./webrtc/Dockerfile.webrtc
-    container_name: videmus-webrtc
-    working_dir: /workspace/webrtc
+      dockerfile: ./resource-server/Dockerfile.resource-server
+    container_name: videmus-resource-server
+    working_dir: /workspace/resource-server
     env_file:
-      - .env.webrtc
+      - .env.resource-server
       - .env.database
     environment:
-      DEBUG: "mediasoup*,videmus:webrtc*"
+      DEBUG: "videmus:resource-server*"
       TZ: 'Asia/Tokyo'
-      DTLS_CERT: ./dtls-cert.pem
-      DTLS_KEY: ./dtls-key.pem
+      MEDIA_SERVER_URL: http://videmus-media-server:4001
     ports:
-      - 44400:44400/udp
-      - 44400:44400/tcp
       - 4000:4000
-      - "50000-50010:50000-50010/udp"
     volumes:
       - ./database:/workspace/database
       - /workspace/database/node_modules
-      - ./webrtc:/workspace/webrtc
-      - /workspace/webrtc/node_modules
+      - ./resource-server:/workspace/resource-server
+      - /workspace/resource-server/node_modules
       - /workspace/node_modules
-      - ./webrtc/dtls-cert.pem:/workspace/webrtc/dtls-cert.pem
-      - ./webrtc/dtls-key.pem:/workspace/webrtc/dtls-key.pem
     depends_on:
       database-preparation:
-        condition: service_completed_successfully 
+        condition: service_completed_successfully
+
+  videmus-media-server:
+    build:
+      dockerfile: ./media-server/Dockerfile.media-server
+    container_name: videmus-media-server
+    working_dir: /workspace/media-server
+    env_file:
+      - .env.media-server
+    environment:
+      DEBUG: "mediasoup*,videmus:media-server*"
+      TZ: 'Asia/Tokyo'
+      DTLS_CERT: ./dtls-cert.pem
+      DTLS_KEY: ./dtls-key.pem
+      API_URL: http://videmus-resource-server:4000
+    ports:
+      - 4001:4001
+      - 44400:44400/udp
+      - 44400:44400/tcp
+      - "50000-50010:50000-50010/udp"
+    volumes:
+      - ./media-server:/workspace/media-server
+      - /workspace/media-server/node_modules
+      - /workspace/node_modules
+      - ./media-server/dtls-cert.pem:/workspace/media-server/dtls-cert.pem
+      - ./media-server/dtls-key.pem:/workspace/media-server/dtls-key.pem
 
   database:
     image: mysql:8.4
@@ -99,5 +118,4 @@ services:
 
 networks:
   default:
-    name: videmus-network 
-
+    name: videmus-network

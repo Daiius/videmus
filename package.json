@@ -2,9 +2,10 @@
   "name": "videmus",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [ 
+  "workspaces": [
     "next",
-    "webrtc",
+    "resource-server",
+    "media-server",
     "database"
   ]
 }

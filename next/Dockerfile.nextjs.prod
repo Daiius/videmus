@@ -11,8 +11,9 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./next/package.json /workspace/next/
 COPY ./database /workspace/database
+COPY ./resource-server/package.json /workspace/resource-server/
 
-RUN pnpm install --filter videmus-next --filter videmus-database
+RUN pnpm install --filter videmus-next --filter videmus-database --filter videmus-resource-server
 
 COPY ./next /workspace/next
 
@@ -32,8 +33,9 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./next/package.json /workspace/next/
 COPY ./database /workspace/database
+COPY ./resource-server/package.json /workspace/resource-server/
 
-RUN pnpm install --prod --filter videmus-next --filter videmus-database
+RUN pnpm install --prod --filter videmus-next --filter videmus-database --filter videmus-resource-server
 
 #RUN ls /workspace
 #RUN ls /workspace/next

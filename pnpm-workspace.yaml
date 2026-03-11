@@ -1,6 +1,7 @@
 packages:
   - next
-  - webrtc
+  - resource-server
+  - media-server
   - database
 
 onlyBuiltDependencies:

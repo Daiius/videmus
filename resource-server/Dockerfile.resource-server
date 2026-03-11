@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-WORKDIR /workspace/next
+WORKDIR /workspace/resource-server
 
 RUN npm install -g pnpm
 
@@ -9,11 +9,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 # monorepo database
 COPY database/package.json /workspace/database/
 # monorepo resource-server
-COPY resource-server/package.json /workspace/resource-server/
-# monorepo nextjs
-COPY next/package.json next/tsconfig.json /workspace/next/
+COPY resource-server/package.json resource-server/tsconfig.json /workspace/resource-server/
 
-RUN pnpm install
+RUN pnpm install --filter videmus-resource-server --filter videmus-database
 
-CMD ["pnpm", "run", "dev"]
 
+CMD ["pnpm", "dev"]
