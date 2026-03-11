@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+coverage
+
+# Environment files
+.env
+.env.*
+!.env.database
+!.env.next
+!.env.resource-server
+!.env.media-server
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / OS
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Test / CI
+coverage
+tmp
+
+# Docs
+docs
+MEMO.md
+README.md

@@ -1,82 +1,10 @@
 services:
-  videmus-nextjs:
-    build:
-      dockerfile: ./next/Dockerfile.nextjs
-    container_name: videmus-nextjs-dev
-    working_dir: /workspace/next
-    environment:
-      TZ: 'Asia/Tokyo'
-    env_file:
-      - .env.next
-      - .env.database
-    ports:
-      - 3000:3000
-    volumes:
-      - ./database:/workspace/database
-      - /workspace/database/node_modules
-      - ./next:/workspace/next
-      - /workspace/next/node_modules
-      - ./resource-server:/workspace/resource-server
-      - /workspace/resource-server/node_modules
-      - /workspace/node_modules
-    tmpfs:
-      - /workspace/app/.next
-
-  videmus-resource-server:
-    build:
-      dockerfile: ./resource-server/Dockerfile.resource-server
-    container_name: videmus-resource-server
-    working_dir: /workspace/resource-server
-    env_file:
-      - .env.resource-server
-      - .env.database
-    environment:
-      DEBUG: "videmus:resource-server*"
-      TZ: 'Asia/Tokyo'
-      MEDIA_SERVER_URL: http://videmus-media-server:4001
-    ports:
-      - 4000:4000
-    volumes:
-      - ./database:/workspace/database
-      - /workspace/database/node_modules
-      - ./resource-server:/workspace/resource-server
-      - /workspace/resource-server/node_modules
-      - /workspace/node_modules
-    depends_on:
-      database-preparation:
-        condition: service_completed_successfully
-
-  videmus-media-server:
-    build:
-      dockerfile: ./media-server/Dockerfile.media-server
-    container_name: videmus-media-server
-    working_dir: /workspace/media-server
-    env_file:
-      - .env.media-server
-    environment:
-      DEBUG: "mediasoup*,videmus:media-server*"
-      TZ: 'Asia/Tokyo'
-      DTLS_CERT: ./dtls-cert.pem
-      DTLS_KEY: ./dtls-key.pem
-      API_URL: http://videmus-resource-server:4000
-    ports:
-      - 4001:4001
-      - 44400:44400/udp
-      - 44400:44400/tcp
-      - "50000-50010:50000-50010/udp"
-    volumes:
-      - ./media-server:/workspace/media-server
-      - /workspace/media-server/node_modules
-      - /workspace/node_modules
-      - ./media-server/dtls-cert.pem:/workspace/media-server/dtls-cert.pem
-      - ./media-server/dtls-key.pem:/workspace/media-server/dtls-key.pem
-
   database:
     image: mysql:8.4
     container_name: videmus-database
     environment:
-      TZ: 'Asia/Tokyo'
-      LANG: 'ja_JP.UTF-8'
+      TZ: "Asia/Tokyo"
+      LANG: "ja_JP.UTF-8"
     env_file:
       - .env.database
     tmpfs:
@@ -91,30 +19,141 @@ services:
       start_period: 5s
 
   database-preparation:
-    build:
-      dockerfile: database/Dockerfile.database-preparation
+    image: node:22-slim
     container_name: videmus-database-preparation
     working_dir: /workspace/database
     env_file:
       - .env.database
     volumes:
+      - ./package.json:/workspace/package.json
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml
       - ./database:/workspace/database
-      - /workspace/database/node_modules
-      - /workspace/node_modules
+      - database-nm:/workspace/database/node_modules
+      - root-nm:/workspace/node_modules
+      - pnpm-store:/root/.local/share/pnpm/store
     command: >
-      bash -c '
-        pnpm drizzle-kit push \
-             --dialect mysql \
-             --schema=./db/schema.ts \
-             --host=$$DB_HOST \
-             --user=$$MYSQL_USER \
-             --password=$$MYSQL_PASSWORD \
-             --database=$$MYSQL_DATABASE && \
-        pnpm tsx addTestData.ts
-      '
+      sh -c "corepack enable &&
+             corepack prepare pnpm@10.32.1 --activate &&
+             pnpm install --prefer-offline --filter videmus-database &&
+             pnpm drizzle-kit push --dialect mysql --schema=./db/schema.ts --host=$$DB_HOST --user=$$MYSQL_USER --password=$$MYSQL_PASSWORD --database=$$MYSQL_DATABASE &&
+             pnpm tsx addTestData.ts"
     depends_on:
       database:
         condition: service_healthy
+
+  videmus-nextjs:
+    image: node:22-slim
+    container_name: videmus-nextjs-dev
+    working_dir: /workspace/next
+    environment:
+      TZ: "Asia/Tokyo"
+    env_file:
+      - .env.next
+      - .env.database
+    ports:
+      - 3000:3000
+    volumes:
+      - ./package.json:/workspace/package.json
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml
+      - ./database:/workspace/database
+      - ./next:/workspace/next
+      - ./resource-server/package.json:/workspace/resource-server/package.json
+      - next-nm:/workspace/next/node_modules
+      - database-nm:/workspace/database/node_modules
+      - resource-server-nm:/workspace/resource-server/node_modules
+      - root-nm:/workspace/node_modules
+      - pnpm-store:/root/.local/share/pnpm/store
+    tmpfs:
+      - /workspace/next/.next
+    command: >
+      sh -c "corepack enable &&
+             corepack prepare pnpm@10.32.1 --activate &&
+             pnpm install --prefer-offline --filter videmus-next --filter videmus-database --filter videmus-resource-server &&
+             pnpm --filter videmus-next dev"
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
+
+  videmus-resource-server:
+    image: node:22-slim
+    container_name: videmus-resource-server
+    working_dir: /workspace/resource-server
+    env_file:
+      - .env.resource-server
+      - .env.database
+    environment:
+      DEBUG: "videmus:resource-server*"
+      TZ: "Asia/Tokyo"
+      MEDIA_SERVER_URL: http://videmus-media-server:4001
+    ports:
+      - 4000:4000
+    volumes:
+      - ./package.json:/workspace/package.json
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml
+      - ./database:/workspace/database
+      - ./resource-server:/workspace/resource-server
+      - resource-server-nm:/workspace/resource-server/node_modules
+      - database-nm:/workspace/database/node_modules
+      - root-nm:/workspace/node_modules
+      - pnpm-store:/root/.local/share/pnpm/store
+    command: >
+      sh -c "corepack enable &&
+             corepack prepare pnpm@10.32.1 --activate &&
+             pnpm install --prefer-offline --filter videmus-resource-server --filter videmus-database &&
+             pnpm --filter videmus-resource-server dev"
+    depends_on:
+      database-preparation:
+        condition: service_completed_successfully
+
+  videmus-media-server:
+    image: node:22-slim
+    container_name: videmus-media-server
+    working_dir: /workspace/media-server
+    env_file:
+      - .env.media-server
+    environment:
+      DEBUG: "mediasoup*,videmus:media-server*"
+      TZ: "Asia/Tokyo"
+      DTLS_CERT: ./dtls-cert.pem
+      DTLS_KEY: ./dtls-key.pem
+      API_URL: http://videmus-resource-server:4000
+    ports:
+      - 4001:4001
+      - 44400:44400/udp
+      - 44400:44400/tcp
+      - "50000-50010:50000-50010/udp"
+    volumes:
+      - ./package.json:/workspace/package.json
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml
+      - ./media-server:/workspace/media-server
+      - ./media-server/dtls-cert.pem:/workspace/media-server/dtls-cert.pem
+      - ./media-server/dtls-key.pem:/workspace/media-server/dtls-key.pem
+      - media-server-nm:/workspace/media-server/node_modules
+      - root-nm:/workspace/node_modules
+      - pnpm-store:/root/.local/share/pnpm/store
+    command: >
+      sh -c "corepack enable &&
+             corepack prepare pnpm@10.32.1 --activate &&
+             pnpm install --prefer-offline --filter videmus-media-server &&
+             pnpm --filter videmus-media-server dev"
+
+volumes:
+  database-nm:
+    name: videmus-database-nm
+  root-nm:
+    name: videmus-root-nm
+  pnpm-store:
+    name: videmus-pnpm-store
+  next-nm:
+    name: videmus-next-nm
+  resource-server-nm:
+    name: videmus-resource-server-nm
+  media-server-nm:
+    name: videmus-media-server-nm
 
 networks:
   default:

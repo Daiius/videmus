@@ -7,14 +7,17 @@ FROM node:20-slim AS build
 
 WORKDIR /workspace/next
 
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+# 依存定義だけ先にコピー（ソース変更でキャッシュが壊れにくい）
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./next/package.json /workspace/next/
-COPY ./database /workspace/database
+COPY ./database/package.json /workspace/database/
 COPY ./resource-server/package.json /workspace/resource-server/
 
 RUN pnpm install --filter videmus-next --filter videmus-database --filter videmus-resource-server
 
+COPY ./database /workspace/database
 COPY ./next /workspace/next
 
 # Next.js の standalone output 機能を使用する
@@ -24,21 +27,6 @@ ENV NEXT_PUBLIC_HOST_URL=$NEXT_PUBLIC_HOST_URL
 RUN if [ -z "$NEXT_PUBLIC_HOST_URL" ]; then echo "--build-arg NEXT_PUBLIC_HOST_URL= is required!"; exit 1; fi
 
 RUN pnpm next build
-
-# Package install layer
-# dependencies をインストール、動作に必要なライブラリだけを取得する
-FROM node:20-slim AS node_modules
-WORKDIR /workspace/next
-RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
-COPY ./next/package.json /workspace/next/
-COPY ./database /workspace/database
-COPY ./resource-server/package.json /workspace/resource-server/
-
-RUN pnpm install --prod --filter videmus-next --filter videmus-database --filter videmus-resource-server
-
-#RUN ls /workspace
-#RUN ls /workspace/next
 
 # Deploy layer
 #
@@ -60,7 +48,6 @@ COPY --from=build /workspace/next/public ./next/public
 COPY --from=build /workspace/next/.next/standalone ./
 COPY --from=build /workspace/next/.next/static ./next/.next/static/
 #COPY --from=build /workspace/next/.next/server ./next/.next/server/
-#COPY --from=node_modules /workspace/node_modules /workspace/node_modules
 
 
 CMD ["./next/server.js"]

@@ -2,8 +2,7 @@ FROM node:22-slim AS build
 
 WORKDIR /workspace/resource-server
 
-RUN npm install -g pnpm
-
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./resource-server/package.json /workspace/resource-server/
@@ -16,21 +15,6 @@ COPY ./database/db/ /workspace/database/db/
 COPY ./resource-server/tsconfig.json ./resource-server/esbuild.config.ts /workspace/resource-server/
 
 RUN pnpm build
-
-
-FROM node:22-slim AS node_modules
-WORKDIR /workspace/resource-server
-
-RUN npm install -g pnpm
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
-COPY ./resource-server/package.json /workspace/resource-server/
-COPY ./database/package.json /workspace/database/
-
-COPY ./resource-server/src/ /workspace/resource-server/src/
-COPY ./resource-server/tsconfig.json ./resource-server/esbuild.config.ts /workspace/resource-server/
-
-RUN pnpm install --prod --filter videmus-resource-server --filter videmus-database
 
 
 FROM gcr.io/distroless/nodejs22:debug
