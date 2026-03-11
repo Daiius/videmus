@@ -28,8 +28,8 @@ export const createWebRtcStreams = async (
   if (!routerRtpCapabilitiesResponse.ok) {
     throw new Error(`channel ${streamId} seems to be closed.`);
   }
-  const routerRtpCapabilities = await routerRtpCapabilitiesResponse.json();
-  console.log(`[CLIENT] 1. routerRtpCapabilities codecs: ${routerRtpCapabilities.codecs?.length}`)
+  const routerRtpCapabilities = await routerRtpCapabilitiesResponse.json() as Record<string, unknown>;
+  console.log(`[CLIENT] 1. routerRtpCapabilities codecs: ${Array.isArray(routerRtpCapabilities.codecs) ? routerRtpCapabilities.codecs.length : 'unknown'}`)
 
   // クライアント側ではサーバ側の動画・音声フォーマット対応状況に合わせて
   // 初期化が行われます

@@ -2,6 +2,11 @@
   "name": "videmus-media-server",
   "version": "0.1.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/app.ts"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsx esbuild.config.ts",

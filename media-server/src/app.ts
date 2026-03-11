@@ -173,33 +173,38 @@ const route =
       return c.text(result.data.message, 200)
     },
   )
-
-/**
- * 内部API (Resource Server から呼ばれる)
- */
-app.get(
-  '/internal/viewer-count/:broadcastId',
-  async c => {
-    const broadcastId = c.req.param('broadcastId')
-    const streamerResources =
-      resourcesDict[broadcastId]?.streamerResources
-    return c.json({
-      count: streamerResources?.length ?? 0,
-      exists: broadcastId in resourcesDict,
-    })
-  }
-)
-
-app.post(
-  '/internal/update-stream-id/:broadcastId',
-  async c => {
-    const broadcastId = c.req.param('broadcastId')
-    const resources = resourcesDict[broadcastId]
-    if (!resources) {
-      return c.json({ updated: false }, 404)
+  /**
+   * 内部API (Resource Server から呼ばれる)
+   */
+  .get(
+    '/internal/viewer-count/:broadcastId',
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const streamerResources =
+        resourcesDict[broadcastId]?.streamerResources
+      return c.json({
+        count: streamerResources?.length ?? 0,
+        exists: broadcastId in resourcesDict,
+      })
     }
-    const { newStreamId } = await c.req.json()
-    resources.streamId = newStreamId
-    return c.json({ updated: true })
-  }
-)
+  )
+  .post(
+    '/internal/update-stream-id/:broadcastId',
+    zValidator(
+      'json',
+      z.object({ newStreamId: z.string() }),
+    ),
+    async c => {
+      const broadcastId = c.req.param('broadcastId')
+      const resources = resourcesDict[broadcastId]
+      if (!resources) {
+        return c.json({ updated: false }, 404)
+      }
+      const { newStreamId } = c.req.valid('json')
+      resources.streamId = newStreamId
+      return c.json({ updated: true })
+    }
+  )
+
+export type MediaAppType = typeof route
+

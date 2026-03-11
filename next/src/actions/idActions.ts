@@ -10,7 +10,7 @@ import {
   updateCurrentChannel as updateCurrentChannelInternal,
 } from '@/lib/broadcastIds';
 
-export const createNewId = async (): Promise<{ newBroadcastId: string }> => await createNewBroadcastId()
+export const createNewId = async () => await createNewBroadcastId()
 
 export const updateCurrentChannel = async (
   broadcastId: string,

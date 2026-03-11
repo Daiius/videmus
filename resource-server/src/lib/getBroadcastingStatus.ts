@@ -1,8 +1,7 @@
 import { getBroadcastingStatus as getBroadcastingStatusDb } from 'videmus-database/db/lib';
 
 import type { VidemusResult } from '../types'
-
-const MEDIA_SERVER_URL = process.env.MEDIA_SERVER_URL;
+import { mediaClient } from './mediaClient'
 
 type GetBroadcastingStatusArgs = {
   broadcastId: string,
@@ -46,9 +45,11 @@ export const getBroadcastingStatus = async ({
     };
   }
 
-  // Media Server に視聴者数を問い合わせ
-  const res = await fetch(`${MEDIA_SERVER_URL}/internal/viewer-count/${broadcastId}`)
-  const { count, exists } = await res.json() as { count: number, exists: boolean }
+  // Media Server に視聴者数を問い合わせ (RPC)
+  const res = await mediaClient.internal['viewer-count'][':broadcastId'].$get({
+    param: { broadcastId },
+  })
+  const { count, exists } = await res.json()
 
   if (!exists) {
     return {

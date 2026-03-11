@@ -1,7 +1,6 @@
 import type { VidemusResult } from '../types'
 import { getBroadcastsById } from './getBroadcastsById'
-
-const MEDIA_SERVER_URL = process.env.MEDIA_SERVER_URL;
+import { mediaClient } from './mediaClient'
 
 type PostCurrentChannelArgs = {
   broadcastId: string,
@@ -35,13 +34,12 @@ export const postCurrentChannel = async ({
     };
   }
 
-  // Media Server にストリームID更新を依頼
-  const res = await fetch(`${MEDIA_SERVER_URL}/internal/update-stream-id/${broadcastId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ newStreamId: newChannelId }),
+  // Media Server にストリームID更新を依頼 (RPC)
+  const res = await mediaClient.internal['update-stream-id'][':broadcastId'].$post({
+    param: { broadcastId },
+    json: { newStreamId: newChannelId },
   })
-  const { updated } = await res.json() as { updated: boolean }
+  const { updated } = await res.json()
 
   if (!updated) {
     // 配信開始前にはリソースが存在しない

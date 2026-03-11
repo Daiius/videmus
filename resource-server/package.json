@@ -2,6 +2,11 @@
   "name": "videmus-resource-server",
   "version": "0.1.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/app.ts"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsx esbuild.config.ts",
@@ -10,10 +15,11 @@
   "dependencies": {
     "@hono/node-server": "^1.19.4",
     "@hono/zod-validator": "^0.7.3",
+    "debug": "^4.4.1",
     "hono": "^4.9.8",
     "mysql2": "^3.14.1",
     "videmus-database": "workspace:*",
-    "debug": "^4.4.1",
+    "videmus-media-server": "workspace:*",
     "zod": "^4.3.5"
   },
   "devDependencies": {

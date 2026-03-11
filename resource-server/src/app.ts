@@ -15,11 +15,11 @@ import { postBroadcastsChannels } from './lib/postBroadcastsChannels'
 import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
 import { bearerAuth } from './middlewares'
-
-
-export const app = new Hono()
+import { mediaClient } from './lib/mediaClient'
 
 const MEDIA_SERVER_URL = process.env.MEDIA_SERVER_URL;
+
+export const app = new Hono()
 
 const origin = process.env.CORS_ORIGINS?.split(',') ?? []
 app.use('*', cors({
@@ -37,26 +37,6 @@ const handleError = <C extends Context>(c: C, error: VidemusError) => {
     case "Unexpected":
       return c.text(error.message, 500)
   }
-}
-
-/**
- * Media Server へのプロキシ
- */
-const proxyToMedia = async (c: Context) => {
-  const url = new URL(c.req.url)
-  const targetUrl = `${MEDIA_SERVER_URL}${url.pathname}${url.search}`
-  const reqBody = c.req.method !== 'GET' ? await c.req.text() : undefined
-  console.log(`[PROXY→] ${c.req.method} ${url.pathname}`)
-  if (reqBody) console.log(`[PROXY→] body length: ${reqBody.length}`)
-  const res = await fetch(targetUrl, {
-    method: c.req.method,
-    headers: c.req.raw.headers,
-    body: reqBody,
-  })
-  const resBody = await res.text()
-  console.log(`[PROXY←] ${res.status} body length: ${resBody.length}`)
-  console.log(`[PROXY←] body preview: ${resBody.substring(0, 200)}`)
-  return new Response(resBody, { status: res.status, headers: res.headers })
 }
 
 const route =
@@ -93,11 +73,15 @@ const route =
     },
   )
   /**
-   * 配信停止: そのまま Media Server に転送
+   * 配信停止: Media Server に RPC
    */
   .delete(
     '/whip/test-broadcast/:id',
-    proxyToMedia,
+    async c => {
+      const id = c.req.param('id')
+      const res = await mediaClient.whip['test-broadcast'][':id'].$delete({ param: { id } })
+      return c.text(await res.text(), res.status as any)
+    },
   )
   /**
    * 配信の状況（開始・停止）と視聴者数の目安を返します
@@ -119,11 +103,16 @@ const route =
     }
   )
   /**
-   * 視聴者向けのストリーミング状況: そのまま Media Server に転送
+   * 視聴者向けのストリーミング状況: Media Server に RPC
    */
   .get(
     '/streaming-status/:channelId',
-    proxyToMedia,
+    async c => {
+      const channelId = c.req.param('channelId')
+      const res = await mediaClient['streaming-status'][':channelId'].$get({ param: { channelId } })
+      const data = await res.json()
+      return c.json(data, res.status as any)
+    },
   )
   /**
    * 配信チャンネル変更: ハイブリッド (DB + Media Server)
@@ -145,27 +134,65 @@ const route =
     },
   )
   /**
-   * mediasoup 系ルート: すべて Media Server にプロキシ
+   * mediasoup 系ルート: Media Server に RPC
    */
   .get(
     '/mediasoup/router-rtp-capabilities/:id',
-    proxyToMedia,
+    async c => {
+      const id = c.req.param('id')
+      const res = await mediaClient.mediasoup['router-rtp-capabilities'][':id'].$get({ param: { id } })
+      const data = await res.json()
+      return c.json(data, res.status as any)
+    },
   )
   .get(
     '/mediasoup/streamer-transport-parameters/:id',
-    proxyToMedia,
+    async c => {
+      const id = c.req.param('id')
+      const res = await mediaClient.mediasoup['streamer-transport-parameters'][':id'].$get({ param: { id } })
+      const data = await res.json()
+      return c.json(data, res.status as any)
+    },
   )
   .post(
     '/mediasoup/client-connect/:streamId/:transportId',
-    proxyToMedia,
+    zValidator('json', z.any()),
+    async c => {
+      const streamId = c.req.param('streamId')
+      const transportId = c.req.param('transportId')
+      const json = c.req.valid('json')
+      const res = await mediaClient.mediasoup['client-connect'][':streamId'][':transportId'].$post({
+        param: { streamId, transportId },
+        json,
+      })
+      return c.text(await res.text(), res.status as any)
+    },
   )
   .post(
     '/mediasoup/consumer-parameters/:streamId/:transportId',
-    proxyToMedia,
+    zValidator('json', z.any()),
+    async c => {
+      const streamId = c.req.param('streamId')
+      const transportId = c.req.param('transportId')
+      const json = c.req.valid('json')
+      const res = await mediaClient.mediasoup['consumer-parameters'][':streamId'][':transportId'].$post({
+        param: { streamId, transportId },
+        json,
+      })
+      const data = await res.json()
+      return c.json(data, res.status as any)
+    },
   )
   .post(
     '/mediasoup/resume-consumer/:streamId/:transportId',
-    proxyToMedia,
+    async c => {
+      const streamId = c.req.param('streamId')
+      const transportId = c.req.param('transportId')
+      const res = await mediaClient.mediasoup['resume-consumer'][':streamId'][':transportId'].$post({
+        param: { streamId, transportId },
+      })
+      return c.text(await res.text(), res.status as any)
+    },
   )
   /**
    * DB CRUD ルート (直接処理)
@@ -271,4 +298,3 @@ const route =
 
 export type AppType = typeof route
 
-export { hc } from 'hono/client'
