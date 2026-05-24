@@ -31,11 +31,10 @@ services:
       - ./database:/workspace/database
       - database-nm:/workspace/database/node_modules
       - root-nm:/workspace/node_modules
-      - pnpm-store:/root/.local/share/pnpm/store
     command: >
       sh -c "corepack enable &&
              corepack prepare pnpm@10.32.1 --activate &&
-             pnpm install --prefer-offline --filter videmus-database &&
+             flock /workspace/node_modules/.install.lock pnpm install --filter videmus-database &&
              pnpm drizzle-kit push --dialect mysql --schema=./db/schema.ts --host=$$DB_HOST --user=$$MYSQL_USER --password=$$MYSQL_PASSWORD --database=$$MYSQL_DATABASE &&
              pnpm tsx addTestData.ts"
     depends_on:
@@ -64,13 +63,12 @@ services:
       - database-nm:/workspace/database/node_modules
       - resource-server-nm:/workspace/resource-server/node_modules
       - root-nm:/workspace/node_modules
-      - pnpm-store:/root/.local/share/pnpm/store
     tmpfs:
       - /workspace/next/.next
     command: >
       sh -c "corepack enable &&
              corepack prepare pnpm@10.32.1 --activate &&
-             pnpm install --prefer-offline --filter videmus-next --filter videmus-database --filter videmus-resource-server &&
+             flock /workspace/node_modules/.install.lock pnpm install --filter videmus-next --filter videmus-database --filter videmus-resource-server &&
              pnpm --filter videmus-next dev"
     depends_on:
       database-preparation:
@@ -98,11 +96,10 @@ services:
       - resource-server-nm:/workspace/resource-server/node_modules
       - database-nm:/workspace/database/node_modules
       - root-nm:/workspace/node_modules
-      - pnpm-store:/root/.local/share/pnpm/store
     command: >
       sh -c "corepack enable &&
              corepack prepare pnpm@10.32.1 --activate &&
-             pnpm install --prefer-offline --filter videmus-resource-server --filter videmus-database &&
+             flock /workspace/node_modules/.install.lock pnpm install --filter videmus-resource-server --filter videmus-database &&
              pnpm --filter videmus-resource-server dev"
     depends_on:
       database-preparation:
@@ -134,11 +131,10 @@ services:
       - ./media-server/dtls-key.pem:/workspace/media-server/dtls-key.pem
       - media-server-nm:/workspace/media-server/node_modules
       - root-nm:/workspace/node_modules
-      - pnpm-store:/root/.local/share/pnpm/store
     command: >
       sh -c "corepack enable &&
              corepack prepare pnpm@10.32.1 --activate &&
-             pnpm install --prefer-offline --filter videmus-media-server &&
+             flock /workspace/node_modules/.install.lock pnpm install --filter videmus-media-server &&
              pnpm --filter videmus-media-server dev"
 
 volumes:
@@ -146,8 +142,6 @@ volumes:
     name: videmus-database-nm
   root-nm:
     name: videmus-root-nm
-  pnpm-store:
-    name: videmus-pnpm-store
   next-nm:
     name: videmus-next-nm
   resource-server-nm:
