@@ -17,12 +17,14 @@
 | G5 | チャンネルの上限（5）を API が検査しない | [03](./03-data-model.md) §1.2 |
 | G6 | WHIP の応答の `Content-Type` が `application/json`（仕様は `application/sdp`） | [04](./04-media.md) §1 |
 | G7 | 視聴ページで、配信していないチャンネルの配信ステータスがエラー表示になる（404 をそのまま出す） | [04](./04-media.md) §3 |
+| G8 | チャンネルを削除しても、その視聴用 URL が失効しない（視聴の可否が DB のチャンネルの有無を見ない） | [03](./03-data-model.md) §2.2 |
 
 ### 2.1 片付け
 
 - 使われていないコード: `next/src/components/GetIdButton.tsx`（存在しない `POST /id` を呼ぶ旧版）、
   `next/src/hooks/useWebRtcStream.ts`（`lib/webRtcClient.ts` の旧版）。
 - 本番で使っていない `next/Dockerfile.nextjs.prod`（next は Vercel に置いている。Node 20 のまま）。
+- 現行の本番イメージでは起動できない `docker-compose.prod.yml`（本番の compose はリポジトリ外。[02](./02-architecture.md) §3）。
 - 配信停止のパス名 `test-broadcast`（開発初期の名残。OBS は `Location` に従うので、変えても OBS の設定は要らない）。
 - media-server の調査用ログ（全リクエストのヘッダ、DTLS パラメータ、SDP の一部を `console.log` で出している）。
   視聴側にも ICE の統計を 5 秒・15 秒後に出す調査用ログがある。
@@ -35,4 +37,4 @@
 | 配信者のログイン | 配信 ID・管理ページ・チャンネル操作をアカウントに紐付ける。近い将来に入れる | [06](./06-auth-and-trust.md) §4 |
 | 管理者による有効化の画面化 | DB の直接編集をやめる。配信者のログインとあわせて行う | [06](./06-auth-and-trust.md) §4 |
 | 視聴者のログイン | 検討中（パスキーなど） | [06](./06-auth-and-trust.md) §4 |
-| Postgres への移行 | deferred constraint で配信 ID とチャンネルの相互参照を DB 側で担保する。近い将来に検討 | [03](./03-data-model.md) §2.2 |
+| Postgres への移行 | deferred constraint で配信 ID とチャンネルの相互参照を DB 側で担保する。近い将来に検討 | [03](./03-data-model.md) §2.3 |
