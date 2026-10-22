@@ -96,8 +96,12 @@ Videmus WebRTCサーバイメージをビルドします
 
 > 
 
-これらのイメージを一度プライベートDocker Hubレジストリ等に
-`docker push`する等して送信し、本番環境で使用する準備をします
+resource-server と media-server のイメージは、GitHub Actions の
+`Build and push server images` ワークフロー（`workflow_dispatch`）で
+`ghcr.io/daiius/videmus-*` にビルド・push します
+
+media-server の mediasoup-worker は、ビルドするホストのカーネルに関係なく
+実行先（本番）に合わせた `linux-x64-kernel6` 版を取得します
 
 本番環境用にdocker-compose.ymlを作成し、
 `docker compose up -d`コマンドなどで実行できます
