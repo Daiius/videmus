@@ -96,9 +96,8 @@ Videmus WebRTCサーバイメージをビルドします
 
 > 
 
-resource-server と media-server のイメージは、GitHub Actions の
-`Build and push server images` ワークフロー（`workflow_dispatch`）で
-`ghcr.io/daiius/videmus-*` にビルド・push します
+resource-server と media-server のイメージは、`./scripts/push-images.sh` で
+`ghcr.io/daiius/videmus-*` にビルド・push します（事前に ghcr.io へ `docker login`）
 
 media-server の mediasoup-worker は、ビルドするホストのカーネルに関係なく
 実行先（本番）に合わせた `linux-x64-kernel6` 版を取得します
