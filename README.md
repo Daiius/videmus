@@ -54,58 +54,29 @@ OBS配信設定もこのページに一緒に示されています。
 配信者から伝えられた視聴用URLにアクセスします。
 
 
-## テスト環境起動方法
-1. Gitリポジトリをクローン
-2. プロジェクトディレクトリ内で `pnpm install` を実行
-   (mediasoupなどbuildの許可を要求された場合には許可してください)
-2. 以下の環境変数ファイルをテスト環境に合わせて記述します
-   - ```env:.env.database
-     DB_HOST=database
-     MYSQL_USER=<任意のデータベースユーザ名>
-     MYSQL_PASSWORD=<任意のデータベースパスワード>
-     MYSQL_DATABASE=<任意のvidemusデータベース名>
-     MYSQL_ROOT_PASSWORD=<任意のMySQLルートパスワード>
-     TEST_BROADCAST_ID=<試験用に初めから有効にする配信用ID文字列>
-     TEST_CHANNEL_ID=<試験用に初めから有効にするチャンネルID文字列>
-     ```
-   - ```env:.env.next
-     NEXT_PUBLIC_HOST_URL=<テスト環境のVidemus Next.jsページURL>
-     HOST_URL=<テスト環境のVidemus Next.jsページURL（同じでOK）>
-     ```
-   - ```env:.env.webrtc
-     ANNOUNCED_IP=<テスト環境のIPアドレス>
-     HOST_URL=<テスト環境のVidemus Next.jsページURL>
-     ```
-3. `docker compose up` コマンドを実行すると、
-   一連のコンテナが立ち上がり開発環境で動作確認が出来ます
+## 仕様
 
-## 配置方法
-### Videmus 本番環境Dockerイメージのビルド
-次のコマンドでVidemus Next.jsイメージと
-Videmus WebRTCサーバイメージをビルドします
+仕様の正典は [`prd/`](./prd/README.md) です。開発時の入口は [`AGENTS.md`](./AGENTS.md) にまとめています。
 
-`docker build -e NEXT\_PUBLIC\_HOST\_URL=<本番環境のVidemus Next.jsのURL> -t <任意のVidemus Next.jsイメージ名> -f ./next/Dockerfile.nextjs.prod .`
-> [!IMPORTANT]
-> Next.jsはNEXT_PUBLIC_から始まる環境変数をビルド時に
-> 埋め込むので、この時点で指定します
->
-> 他の環境変数は本番環境のdocker-compose.ymlなどで指定できます
+## 開発環境の起動
 
-`docker build -t <任意のVidemus WebRTCサーバイメージ名> -f ./webrtc/Dockerfile.webrtc.prod .`
+ホストに `node_modules` は置かず、すべてコンテナ内で動かします（[prd/02](./prd/02-architecture.md) §4）。
 
+1. Git リポジトリをクローンします
+2. 次の環境変数ファイルを用意します（変数の意味は [prd/02](./prd/02-architecture.md) §5）
+   - `.env.database`: `DB_HOST=database` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE` /
+     `MYSQL_ROOT_PASSWORD` / `TEST_BROADCAST_ID`（試験用に最初から有効にする配信 ID）/
+     `TEST_CHANNEL_ID`（試験用のチャンネル ID）
+   - `.env.next`: `NEXT_PUBLIC_HOST_URL` / `NEXT_PUBLIC_API_URL` / `API_URL` / `API_KEY`
+   - `.env.resource-server`: `API_KEY` / `CORS_ORIGINS`
+   - `.env.media-server`: `ANNOUNCED_IP` / `WEBRTC_PORT`
+3. DTLS の証明書と秘密鍵を `media-server/dtls-cert.pem` と `media-server/dtls-key.pem` に置きます
+4. `docker compose up` を実行すると、DB の準備（スキーマの作成と試験データの投入）のあとに
+   next（3000）・resource-server（4000）・media-server（4001、WebRTC 44400）が起動します。
+   DB のデータは起動のたびに消えます
 
-> 
+## 配置
 
-resource-server と media-server のイメージは、`./scripts/push-images.sh` で
-`ghcr.io/daiius/videmus-*` にビルド・push します（事前に ghcr.io へ `docker login`）
-
-media-server の mediasoup-worker は、ビルドするホストのカーネルに関係なく
-実行先（本番）に合わせた `linux-x64-kernel6` 版を取得します
-
-本番環境用にdocker-compose.ymlを作成し、
-`docker compose up -d`コマンドなどで実行できます
-
-### 配置時の注意
-videmus-webrtcコンテナをパフォーマンスのため`network\_mode: host` で運用します。
-ポート指定や他のコンテナとの相互運用、ホスト側のファイアウォール設定など
-注意する必要があります。
+next は Vercel に、resource-server と media-server は VPS 上の docker compose に置きます。
+サーバのイメージは `./scripts/push-images.sh` で `ghcr.io/daiius/videmus-*` にビルド・push します
+（事前に ghcr.io へ `docker login`）。詳細は [prd/02](./prd/02-architecture.md) §3 にあります。
