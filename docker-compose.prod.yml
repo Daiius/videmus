@@ -4,8 +4,8 @@ services:
     container_name: videmus-nextjs
     volumes: !reset
   videmus-resource-server:
-    image: daiius/private-registry:videmus-resource-server
+    image: ghcr.io/daiius/videmus-resource-server
     volumes: !reset
   videmus-media-server:
-    image: daiius/private-registry:videmus-media-server
+    image: ghcr.io/daiius/videmus-media-server
     volumes: !reset

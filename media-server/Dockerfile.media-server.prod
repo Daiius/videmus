@@ -8,7 +8,8 @@ RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY ./media-server/package.json /workspace/media-server/
 
-RUN pnpm install --filter videmus-media-server
+# バンドルするだけで mediasoup-worker は要らないので postinstall を止める（理由は node_modules ステージ）
+RUN MEDIASOUP_WORKER_BIN=skip pnpm install --filter videmus-media-server
 
 COPY ./media-server/src/ /workspace/media-server/src/
 COPY ./media-server/tsconfig.json ./media-server/esbuild.config.ts /workspace/media-server/
@@ -27,7 +28,17 @@ COPY ./media-server/package.json /workspace/media-server/
 COPY ./media-server/src/ /workspace/media-server/src/
 COPY ./media-server/tsconfig.json ./media-server/esbuild.config.ts /workspace/media-server/
 
-RUN pnpm install --prod --filter videmus-media-server
+# mediasoup の postinstall は「ビルドするホスト」のカーネルで prebuilt を選ぶため、
+# カーネル 7 のホストでは存在しない kernel7 版を探してソースビルドに落ちる。
+# 実行先（本番）のカーネル 6 向けを明示的に取得する。
+# MEDIASOUP_WORKER_BIN を与えると postinstall は何もしない
+RUN MEDIASOUP_WORKER_BIN=skip pnpm install --prod --filter videmus-media-server
+
+# mediasoup の exports に ./package.json が無いので、パッケージ名ではなく相対パスで読む
+RUN v=$(node -p "require('./node_modules/mediasoup/package.json').version") \
+    && node -e "fetch(process.argv[1]).then(r => { if (!r.ok) throw new Error(r.status + ' ' + r.url); return r.arrayBuffer() }).then(b => process.stdout.write(Buffer.from(b)))" \
+        "https://github.com/versatica/mediasoup/releases/download/$v/mediasoup-worker-$v-linux-x64-kernel6.tgz" \
+      | tar xz -C /workspace/media-server mediasoup-worker
 
 
 FROM gcr.io/distroless/nodejs22:debug
@@ -35,7 +46,7 @@ FROM gcr.io/distroless/nodejs22:debug
 WORKDIR /workspace/media-server
 
 COPY ./media-server/package.json ./
-COPY --from=node_modules /workspace/media-server/node_modules/mediasoup/worker/out/Release/mediasoup-worker /workspace/media-server/.
+COPY --from=node_modules /workspace/media-server/mediasoup-worker /workspace/media-server/.
 COPY --from=build /workspace/media-server/dist/server.js /workspace/media-server/server.js
 
 ENV MEDIASOUP_WORKER_BIN=/workspace/media-server/mediasoup-worker
