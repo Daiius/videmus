@@ -173,7 +173,10 @@ export const postWhip = async ({
       sendingRtpParameters.rtcp!.cname =
         sdpCommonUtils.getCname({ offerMediaObject });
       sendingRtpParameters.encodings =
-        sdpUnifiedPlanUtils.getRtpEncodings({ offerMediaObject });
+        sdpUnifiedPlanUtils.getRtpEncodings({
+          offerMediaObject,
+          codecs: sendingRtpParameters.codecs,
+        });
 
       debug('%o', sendingRtpParameters);
       debug('%o', sendingRemoteRtpParameters);
