@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM node:24-trixie-slim AS build
 
 WORKDIR /workspace/media-server
 
@@ -17,7 +17,7 @@ COPY ./media-server/tsconfig.json ./media-server/esbuild.config.ts /workspace/me
 RUN pnpm build
 
 
-FROM node:22-slim AS node_modules
+FROM node:24-trixie-slim AS node_modules
 WORKDIR /workspace/media-server
 
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
@@ -29,7 +29,7 @@ COPY ./media-server/src/ /workspace/media-server/src/
 COPY ./media-server/tsconfig.json ./media-server/esbuild.config.ts /workspace/media-server/
 
 # mediasoup の postinstall は「ビルドするホスト」のカーネルで prebuilt を選ぶため、
-# カーネル 7 のホストでは存在しない kernel7 版を探してソースビルドに落ちる。
+# カーネル 7 のホストでビルドすると kernel7 版が入ってしまう。
 # 実行先（本番）のカーネル 6 向けを明示的に取得する。
 # MEDIASOUP_WORKER_BIN を与えると postinstall は何もしない
 RUN MEDIASOUP_WORKER_BIN=skip pnpm install --prod --filter videmus-media-server
@@ -41,7 +41,7 @@ RUN v=$(node -p "require('./node_modules/mediasoup/package.json').version") \
       | tar xz -C /workspace/media-server mediasoup-worker
 
 
-FROM gcr.io/distroless/nodejs22:debug
+FROM gcr.io/distroless/nodejs24-debian13:debug
 
 WORKDIR /workspace/media-server
 

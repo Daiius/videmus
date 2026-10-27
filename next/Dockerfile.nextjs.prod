@@ -3,7 +3,7 @@
 # Build layer
 # devDependenciesも含めてinstallし、
 # .next/ 内にNext.js関連の仕組みが動作するのに必要なファイルを出力
-FROM node:20-slim AS build
+FROM node:24-trixie-slim AS build
 
 WORKDIR /workspace/next
 
@@ -36,8 +36,8 @@ RUN pnpm next build
 # そこでNext.jsのstandalone機能を使用してserver.jsを出力させたが、
 # これもnextバイナリとは異なるのでシェルのある環境でないと動かせていない
 # 要対処、nextバイナリだけstandaloneディレクトリにコピーしたら上手くいくかも
-#FROM gcr.io/distroless/nodejs20-debian12
-FROM gcr.io/distroless/nodejs20:debug
+#FROM gcr.io/distroless/nodejs24-debian13
+FROM gcr.io/distroless/nodejs24-debian13:debug
 
 WORKDIR /workspace/next
 ENV NODE_ENV=production
