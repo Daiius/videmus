@@ -71,9 +71,9 @@ OBS配信設定もこのページに一緒に示されています。
    - `.env.resource-server`: `API_KEY` / `CORS_ORIGINS`
    - `.env.media-server`: `ANNOUNCED_IP` / `WEBRTC_PORT`
 3. DTLS の証明書と秘密鍵を `media-server/dtls-cert.pem` と `media-server/dtls-key.pem` に置きます
-4. `docker compose up` を実行すると、DB の準備（スキーマの作成と試験データの投入）のあとに
+4. `docker compose up --build --watch` を実行すると、DB の準備（スキーマの作成と試験データの投入）のあとに
    next（3000）・resource-server（4000）・media-server（4001、WebRTC 44400）が起動します。
-   DB のデータは起動のたびに消えます
+   ソースの変更はコンテナに同期され、各サーバが読み直します。DB のデータは起動のたびに消えます
 
 ## 配置
 

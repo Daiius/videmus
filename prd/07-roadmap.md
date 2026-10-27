@@ -23,7 +23,7 @@
 
 - 使われていないコード: `next/src/components/GetIdButton.tsx`（存在しない `POST /id` を呼ぶ旧版）、
   `next/src/hooks/useWebRtcStream.ts`（`lib/webRtcClient.ts` の旧版）。
-- 本番で使っていない `next/Dockerfile.nextjs.prod`（next は Vercel に置いている。Node 20 のまま）。
+- 本番で使っていない `next/Dockerfile.nextjs.prod`（next は Vercel に置いている）。
 - 現行の本番イメージでは起動できない `docker-compose.prod.yml`（本番の compose はリポジトリ外。[02](./02-architecture.md) §3）。
 - 配信停止のパス名 `test-broadcast`（開発初期の名残。OBS は `Location` に従うので、変えても OBS の設定は要らない）。
 - media-server の調査用ログ（全リクエストのヘッダ、DTLS パラメータ、SDP の一部を `console.log` で出している）。

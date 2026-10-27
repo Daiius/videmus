@@ -7,7 +7,8 @@ node_modules
 **/node_modules
 
 # Build outputs
-.next
+**/.next
+**/dist
 coverage
 
 # Environment files
@@ -17,6 +18,9 @@ coverage
 !.env.next
 !.env.resource-server
 !.env.media-server
+
+# DTLS の証明書と鍵（開発用 compose は bind mount で渡す）
+**/*.pem
 
 # Logs
 *.log
