@@ -46,8 +46,8 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
   `scripts/push-images.sh` でビルドし、`ghcr.io/daiius/videmus-{resource-server,media-server}` に push する
   （`:latest` と `:<commit sha>`）。
   - **本番の compose はこのリポジトリの外で管理している。** リポジトリの `docker-compose.prod.yml` は
-    image と volumes しか上書きしないので、開発用 compose の `command`（`sh -c "corepack enable && ... pnpm dev"`）が
-    そのまま引き継がれる。distroless のイメージにはシェルが無く、この組み合わせでは起動できない。
+    image・build・volumes・develop しか上書きしないので、開発用 compose の `command`（`pnpm --filter ... dev`）が
+    そのまま引き継がれる。distroless のイメージには pnpm もシェルも無く、この組み合わせでは起動できない。
     本番の配置手順としては使えない（[07](./07-roadmap.md) §2.1 の片付け）。
   - media-server の mediasoup-worker は、**実行先（本番）のカーネル 6 向けのビルド済みバイナリ**を取得する。
     mediasoup の postinstall はビルドするホストのカーネルで選ぶため、それに任せるとカーネル 7 のホストでは

@@ -7,7 +7,7 @@ FROM node:24-trixie-slim AS build
 
 WORKDIR /workspace/next
 
-RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+RUN corepack enable && corepack prepare pnpm@12.15.0 --activate
 
 # 依存定義だけ先にコピー（ソース変更でキャッシュが壊れにくい）
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/

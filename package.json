@@ -2,6 +2,7 @@
   "name": "videmus",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.15.0",
   "workspaces": [
     "next",
     "resource-server",
