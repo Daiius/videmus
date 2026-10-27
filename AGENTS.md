@@ -30,7 +30,8 @@ OBS から WebRTC（WHIP）で受けた配信を、少人数の視聴者にブ�
 
 ## 開発
 
-- `docker compose up` で DB の準備から各サーバの起動までが走る（[prd/02](./prd/02-architecture.md) §4）。
+- `docker compose up --build --watch` で DB の準備から各サーバの起動までが走る（[prd/02](./prd/02-architecture.md) §4）。
+  依存はモノレポ全体を入れたイメージ（`Dockerfile.dev`）に持ち、ソースは compose watch で同期する。
   ホストに `node_modules` は置かない。DB のデータは起動のたびに消える。
 - 環境変数は `.env.*`（gitignore 対象・コミットしない）。一覧は [prd/02](./prd/02-architecture.md) §5。
 - サーバのイメージは `./scripts/push-images.sh` で ghcr に push する（[prd/02](./prd/02-architecture.md) §3）。

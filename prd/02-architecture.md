@@ -41,7 +41,7 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
 ## 3. 配置
 
 - **next**: Vercel にデプロイする（root ディレクトリは `next/`）。
-  `next/Dockerfile.nextjs.prod` も残っているが本番では使っていない（Node 20 のまま。[07](./07-roadmap.md) §2 の片付け）。
+  `next/Dockerfile.nextjs.prod` も残っているが本番では使っていない（[07](./07-roadmap.md) §2 の片付け）。
 - **resource-server / media-server**: VPS 上の docker compose で動かす。イメージはこのリポジトリの
   `scripts/push-images.sh` でビルドし、`ghcr.io/daiius/videmus-{resource-server,media-server}` に push する
   （`:latest` と `:<commit sha>`）。
@@ -51,8 +51,8 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
     本番の配置手順としては使えない（[07](./07-roadmap.md) §2.1 の片付け）。
   - media-server の mediasoup-worker は、**実行先（本番）のカーネル 6 向けのビルド済みバイナリ**を取得する。
     mediasoup の postinstall はビルドするホストのカーネルで選ぶため、それに任せるとカーネル 7 のホストでは
-    存在しない版を探してソースビルドに落ちる（`media-server/Dockerfile.media-server.prod`）。
-  - 本番イメージは distroless（`gcr.io/distroless/nodejs22:debug`）上で、esbuild でバンドルした `server.js` を動かす。
+    kernel7 版が入り、本番とずれる（`media-server/Dockerfile.media-server.prod`）。
+  - 本番イメージは distroless（`gcr.io/distroless/nodejs24-debian13:debug`）上で、esbuild でバンドルした `server.js` を動かす。
 - **DB**: MySQL。本番のホスト・ポートの公開方法・TLS などの具体は公開リポジトリに書かない。
 - **WebRTC のポート**: media-server は UDP/TCP の 1 ポート（既定 44400、`WEBRTC_PORT`）で全配信・全視聴者を受ける
   （mediasoup の `WebRtcServer`）。`ANNOUNCED_IP` に外から届く IP を設定する。
@@ -60,8 +60,14 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
 
 ## 4. 開発環境
 
-`docker compose up` で次が起動する（`docker-compose.yml`）。ホストに `node_modules` は置かず、
-named volume に持つ。
+`docker compose up --build --watch` で次が起動する（`docker-compose.yml`）。
+全サービスがモノレポ全体を入れた 1 つのイメージ（`Dockerfile.dev`）を使い、依存（`node_modules`）はイメージに持つ。
+ホストに `node_modules` は置かない。ソースの変更は compose watch の `sync` でコンテナに反映し、
+`tsx watch` と `next dev` がそれぞれ読み直す。`pnpm-lock.yaml` が変わったときはイメージを作り直す（`rebuild`）。
+
+`Dockerfile.dev` は Debian 13 ベース（`node:24-trixie-slim`）にする。イメージのビルドで mediasoup の postinstall が
+ビルドするホストのカーネル向けの mediasoup-worker を取得する。カーネル 7 向けは glibc 2.38 以上を要求するので、
+Debian 12 ベース（`node:24-slim` など）ではこれが動かず、ソースビルドに落ちて失敗する（イメージに Python が無い）。
 
 | サービス | 内容 |
 |---|---|

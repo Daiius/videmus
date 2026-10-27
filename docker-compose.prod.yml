@@ -2,10 +2,16 @@ services:
   videmus-nextjs:
     image: daiius/private-registry:videmus-nextjs
     container_name: videmus-nextjs
+    build: !reset null
     volumes: !reset
+    develop: !reset null
   videmus-resource-server:
     image: ghcr.io/daiius/videmus-resource-server
+    build: !reset null
     volumes: !reset
+    develop: !reset null
   videmus-media-server:
     image: ghcr.io/daiius/videmus-media-server
+    build: !reset null
     volumes: !reset
+    develop: !reset null

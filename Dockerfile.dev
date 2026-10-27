@@ -1,0 +1,17 @@
+# 開発用 compose の全サービスが使うイメージ（prd/02 §4）。ソースは compose watch の sync で反映する。
+# Debian 13 ベースにする: mediasoup の postinstall はビルドするホストのカーネル向けの worker を取得し、
+# カーネル 7 向けは glibc 2.38 以上を要求する（Debian 12 では動かず、ソースビルドに落ちて失敗する）
+FROM node:24-trixie-slim
+WORKDIR /workspace
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY database/package.json ./database/
+COPY media-server/package.json ./media-server/
+COPY resource-server/package.json ./resource-server/
+COPY next/package.json ./next/
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+COPY database/ ./database/
+COPY media-server/ ./media-server/
+COPY resource-server/ ./resource-server/
+COPY next/ ./next/
