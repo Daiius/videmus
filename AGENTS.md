@@ -33,6 +33,8 @@ OBS から WebRTC（WHIP）で受けた配信を、少人数の視聴者にブ�
 - `docker compose up --build --watch` で DB の準備から各サーバの起動までが走る（[prd/02](./prd/02-architecture.md) §4）。
   依存はモノレポ全体を入れたイメージ（`Dockerfile.dev`）に持ち、ソースは compose watch で同期する。
   ホストに `node_modules` は置かない。DB のデータは起動のたびに消える。
+- pnpm は `package.json` の `packageManager` の版（12 系）を使う。公開から 1 日たっていない版は
+  pnpm の既定（`minimumReleaseAge`）で入らないので、依存を上げるときはその手前の版に解決する。
 - 環境変数は `.env.*`（gitignore 対象・コミットしない）。一覧は [prd/02](./prd/02-architecture.md) §5。
 - サーバのイメージは `./scripts/push-images.sh` で ghcr に push する（[prd/02](./prd/02-architecture.md) §3）。
   media-server の mediasoup-worker は本番のカーネル 6 向けを固定で取得する。ビルドするホストのカーネルに任せない。

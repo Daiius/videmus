@@ -4,7 +4,7 @@ packages:
   - media-server
   - database
 
-onlyBuiltDependencies:
-  - esbuild
-  - mediasoup
-  - sharp
+allowBuilds:
+  esbuild: true
+  mediasoup: true
+  sharp: true
