@@ -209,11 +209,11 @@ importers:
         specifier: ^4.13.14
         version: 4.13.14
       mediasoup:
-        specifier: ^3.31.0
-        version: 3.31.0
+        specifier: ^3.32.2
+        version: 3.32.2
       mediasoup-client:
-        specifier: ^3.25.3
-        version: 3.25.3
+        specifier: ^3.26.0
+        version: 3.26.0
       sdp-transform:
         specifier: ^2.15.0
         version: 2.15.0
@@ -255,8 +255,8 @@ importers:
         specifier: ^4.13.14
         version: 4.13.14
       mediasoup-client:
-        specifier: ^3.25.3
-        version: 3.25.3
+        specifier: ^3.26.0
+        version: 3.26.0
       nanoid:
         specifier: ^5.1.16
         version: 5.1.16
@@ -298,8 +298,8 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
       mediasoup:
-        specifier: ^3.31.0
-        version: 3.31.0
+        specifier: ^3.32.2
+        version: 3.32.2
       postcss:
         specifier: ^8.5.31
         version: 8.5.31
@@ -1645,12 +1645,12 @@ packages:
     resolution: {integrity: sha512-5J9ysMYUpYIg9RF2vJpy9SinEmSviFSe0GyPpCQ4L5QSkLAgeLXlTAOu2ZwWUU5m+0SBl6gUU1R1ZQB3aKypfA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  mediasoup-client@3.25.3:
-    resolution: {integrity: sha512-LczeC7H96+pNGw/tly80FWqRHn+mim1kvUMq/7FNTC9zP2AVWK8nBZ4cHp+OIg1uF1DIiQGnOSsPr7X2aSGDTg==}
+  mediasoup-client@3.26.0:
+    resolution: {integrity: sha512-XrbXA6yhBW6/MVqYSWHtZ+OiTvu3AIdXdpW6bAy7jkuhQtxQXUGv8BCssLYEt4hJC8GNwNAlTYcv/NhwSBD8tA==}
     engines: {node: '>=22'}
 
-  mediasoup@3.31.0:
-    resolution: {integrity: sha512-q0Vuw2ID+kxmgG7BtNcGVvkWxyUI2iAdVkgxLi/xOHsPaMYMijNiKfmjf5gd31Bhb58DeL9i5uclgmTH+V6m+Q==}
+  mediasoup@3.32.2:
+    resolution: {integrity: sha512-VAcQDpWBjoWLrRMrN2AlVxuPzgdOwPOwBN1Gw0/MuWohe8R42kkD8V99SNqO1SjjrDjuqAgeJ9aMi8k4FoSFVA==}
     engines: {node: '>=22'}
 
   merge2@1.4.1:
@@ -3093,7 +3093,7 @@ snapshots:
 
   lru.min@1.1.5: {}
 
-  mediasoup-client@3.25.3:
+  mediasoup-client@3.26.0:
     dependencies:
       '@types/debug': 4.1.13
       '@types/events-alias': '@types/events@3.0.3'
@@ -3105,7 +3105,7 @@ snapshots:
       sdp-transform: 3.0.0
       supports-color: 11.0.0
 
-  mediasoup@3.31.0:
+  mediasoup@3.32.2:
     dependencies:
       debug: 4.4.3(supports-color@11.0.0)
       flatbuffers: 25.9.23
