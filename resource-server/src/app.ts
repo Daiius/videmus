@@ -16,8 +16,12 @@ import { deleteBroadcastsChannels } from './lib/deleteBroadcastsChannels'
 
 import { bearerAuth } from './middlewares'
 import { mediaClient } from './lib/mediaClient'
+import { buildVersionFromEnv } from './lib/buildVersion'
 
 const MEDIA_SERVER_URL = process.env.MEDIA_SERVER_URL;
+
+// ビルドの版。イメージのビルド引数から ENV に入る（Dockerfile.resource-server.prod）
+const version = buildVersionFromEnv(process.env)
 
 export const app = new Hono()
 
@@ -293,6 +297,10 @@ const route =
       return c.body(null, 200)
     },
   )
+  /**
+   * ビルドの版（prd/05 §4）。認証なし・DB にも media-server にも触れない。値は起動時に ENV から読んだもの
+   */
+  .get('/version', c => c.json(version, 200))
 
 
 

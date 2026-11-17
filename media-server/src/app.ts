@@ -14,6 +14,10 @@ import { postMediasoupConsumerParameters } from './lib/postMediasoupConsumerPara
 import { postMediasoupResumeConsumer } from './lib/postMediasoupResumeConsumer'
 
 import { resourcesDict } from './resources'
+import { buildVersionFromEnv } from './lib/buildVersion'
+
+// ビルドの版。イメージのビルド引数から ENV に入る（Dockerfile.media-server.prod）
+const version = buildVersionFromEnv(process.env)
 
 
 export const app = new Hono()
@@ -205,6 +209,10 @@ const route =
       return c.json({ updated: true })
     }
   )
+  /**
+   * ビルドの版（prd/05 §4）。認証なし・配信リソースに触れない。値は起動時に ENV から読んだもの
+   */
+  .get('/version', c => c.json(version, 200))
 
 export type MediaAppType = typeof route
 
