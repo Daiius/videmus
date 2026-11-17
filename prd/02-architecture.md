@@ -53,6 +53,8 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
     mediasoup の postinstall はビルドするホストのカーネルで選ぶため、それに任せるとカーネル 7 のホストでは
     kernel7 版が入り、本番とずれる（`media-server/Dockerfile.media-server.prod`）。
   - 本番イメージは distroless（`gcr.io/distroless/nodejs24-debian13:debug`）上で、esbuild でバンドルした `server.js` を動かす。
+  - 同じイメージは GitHub Actions（`.github/workflows/build-push-images.yml`。手動起動）でも作れる。
+    タグは `:<commit sha>` で、main から作ったときだけ `:latest` も付ける。
 - **DB**: MySQL。本番のホスト・ポートの公開方法・TLS などの具体は公開リポジトリに書かない。
 - **WebRTC のポート**: media-server は UDP/TCP の 1 ポート（既定 44400、`WEBRTC_PORT`）で全配信・全視聴者を受ける
   （mediasoup の `WebRtcServer`）。`ANNOUNCED_IP` に外から届く IP を設定する。

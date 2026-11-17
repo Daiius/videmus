@@ -1,0 +1,60 @@
+name: Build and push images
+
+# resource-server / media-server の本番イメージを作り、GHCR に push する（prd/02 §3）。
+# 手で起動する（Actions の画面で ref を選ぶ）。
+# タグはコミットの SHA（40 桁・接頭辞なし。scripts/push-images.sh と同じ形）。main から作ったときだけ latest も付ける。
+# 第三者の action は使わず、ランナーの docker で作る。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # 片方が失敗しても、もう片方は最後まで作る
+      fail-fast: false
+      matrix:
+        service: [resource-server, media-server]
+    env:
+      IMAGE: ghcr.io/daiius/videmus-${{ matrix.service }}
+      SERVICE: ${{ matrix.service }}
+      SHA: ${{ github.sha }}
+    steps:
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Login to GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      # ビルドの版（GET /version が返す）をビルド引数で渡す。日時は UTC。
+      # checkout したままのツリーから作るので dirty は常に false。
+      # Dockerfile が ARG を持たない版でも、渡した引数は使われないだけでビルドは通る
+      - name: Build
+        run: |
+          docker build --pull \
+            -f "$SERVICE/Dockerfile.$SERVICE.prod" \
+            --build-arg GIT_COMMIT="$SHA" \
+            --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg GIT_DIRTY=false \
+            --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
+            --label org.opencontainers.image.revision="$SHA" \
+            -t "$IMAGE:$SHA" .
+      - name: Push
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          docker push "$IMAGE:$SHA"
+          if [ "$REF" = "refs/heads/main" ]; then
+            docker tag "$IMAGE:$SHA" "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi
+          echo "pushed $IMAGE:$SHA" >> "$GITHUB_STEP_SUMMARY"
