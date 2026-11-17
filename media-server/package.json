@@ -16,7 +16,7 @@
     "@hono/node-server": "^2.1.6",
     "@hono/zod-validator": "^0.7.6",
     "debug": "^4.4.3",
-    "hono": "^4.13.14",
+    "hono": "^4.13.16",
     "mediasoup": "^3.31.0",
     "mediasoup-client": "^3.25.3",
     "sdp-transform": "^2.15.0",
