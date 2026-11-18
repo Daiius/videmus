@@ -23,7 +23,7 @@ const Header: React.FC = () => (
       href='/'
     >
       <span className='text-4xl'>V</span>
-      <span className='text-2xl -ml-[0.3rem]'>idemus</span>
+      <span className='text-2xl ml-[-0.3rem]'>idemus</span>
     </Link>
   </header>
 );

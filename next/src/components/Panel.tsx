@@ -17,7 +17,7 @@ const Panel = ({
 }: PanelProps) => (
   <section 
     className={clsx(
-      'bg-panel rounded-sm',
+      'bg-panel rounded-xs',
       inline && 'flex items-center gap-4', 
       className,
     )}

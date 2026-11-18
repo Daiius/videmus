@@ -27,7 +27,7 @@ const StreamUrl = ({
         className,
       )}
     >
-      <div className='overflow-ellipsis text-nowrap overflow-hidden'>{streamUrl}</div>
+      <div className='text-ellipsis text-nowrap overflow-hidden'>{streamUrl}</div>
       {!hideButton && 
         <Button
           className='bg-transparent'
