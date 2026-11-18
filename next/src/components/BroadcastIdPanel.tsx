@@ -22,7 +22,7 @@ const BroadcastIdPanel = ({
     className={clsx(className)}
   >
     <div className='flex gap-1 items-center min-w-0'>
-      <p className='overflow-ellipsis overflow-hidden whitespace-nowrap min-w-0'>
+      <p className='text-ellipsis overflow-hidden whitespace-nowrap min-w-0'>
         {broadcastId}
       </p>
       {isAvailable

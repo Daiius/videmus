@@ -35,7 +35,7 @@ const ChannelsPanel = ({
       )}
       {channels.length < 5
         ? <li>
-            <div className='opacity-20 my-2 border-b'/>
+            <div className='opacity-20 my-2 border-b border-gray-200'/>
             <CreateChannelButton broadcastId={broadcastId} />
           </li>
         : <li>(チャンネルの最大数は 5 です)</li>

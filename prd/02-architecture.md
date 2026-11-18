@@ -7,7 +7,7 @@
 
 | 層 | 採用 |
 |---|---|
-| UI | Next.js 16（App Router・Server Components・Server Actions）+ React 19 + Tailwind CSS 3 + Headless UI / SWR（ポーリング） |
+| UI | Next.js 16（App Router・Server Components・Server Actions）+ React 19 + Tailwind CSS 4 + Headless UI / SWR（ポーリング） |
 | API | Hono（resource-server / media-server とも）+ `@hono/node-server`、パッケージ間は Hono RPC で型を共有 |
 | メディア | mediasoup 3（サーバ側 SFU）/ mediasoup-client（視聴側、および WHIP の SDP 処理にも流用）/ sdp-transform |
 | DB | MySQL 8.4 + Drizzle ORM 1.0（beta 追従）/ mysql2 |

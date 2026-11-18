@@ -1,4 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
+/*
+  画面の色。Tailwind CSS 3 の既定パレットの値（slate / red / green / blue）をそのまま書いている。
+  4 の既定パレットは oklch に変わって値が少し違うため、見た目を保つように 3 の値で固定する。
+*/
+@theme {
+  --color-background: #0f172a; /* slate-900 */
+  --color-foreground: #fff; /* white */
+  --color-header: #020617; /* slate-950 */
+  --color-panel: #1e293b; /* slate-800 */
+  --color-primary: #475569; /* slate-600 */
+  --color-primary-hover: #64748b; /* slate-500 */
+  --color-primary-highlight: #94a3b8; /* slate-400 */
+  --color-danger: #f87171; /* red-400 */
+  --color-success: #4ade80; /* green-400 */
+  --color-active: #3b82f6; /* blue-500 */
+}

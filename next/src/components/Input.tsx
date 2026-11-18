@@ -11,7 +11,7 @@ const Input: React.FC<
     className={clsx(
       'rounded-md',
       'bg-primary border border-primary',
-      'outline-none',
+      'outline-hidden',
       'transition ease-in-out duration-300 hover:bg-panel',
       'focus:border-active focus:bg-panel',
       'p-1',

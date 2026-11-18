@@ -45,7 +45,7 @@ const ObsBroadcastUrlPanel = ({
         onClose={() => setIsOpen(false)}
         className={clsx(
           'relative z-50',
-          'transition duration-200 ease-in-out data-[closed]:opacity-0',
+          'transition duration-200 ease-in-out data-closed:opacity-0',
         )}
         transition
       >
