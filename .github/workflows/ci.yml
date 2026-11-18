@@ -1,0 +1,60 @@
+name: CI
+
+# 型検査と本番ビルドを、PR と main への push で回す。
+# fork の PR にも秘密を渡さない形にする: pull_request で起動し（pull_request_target は使わない）、
+# 権限は contents: read だけ、秘密は参照しない。
+# lint は入れていない（next の lint スクリプト `next lint` が今は動かないため）。
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      # v7.1.0。Node は本番イメージ（node:24 / distroless nodejs24）と同じ 24 系
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+      # pnpm は package.json の packageManager の版を corepack が入れる（Dockerfile と同じ入れ方）
+      - run: corepack enable
+      - run: pnpm --version
+      # 型検査とバンドルに mediasoup-worker は要らないので、postinstall での取得を止める
+      # （本番の Dockerfile のビルドステージと同じ）
+      - name: Install
+        env:
+          MEDIASOUP_WORKER_BIN: skip
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (database)
+        run: pnpm --filter videmus-database exec tsc --noEmit
+      - name: Typecheck (media-server)
+        run: pnpm --filter videmus-media-server exec tsc --noEmit
+      - name: Typecheck (resource-server)
+        run: pnpm --filter videmus-resource-server exec tsc --noEmit
+      - name: Typecheck (next)
+        run: pnpm --filter videmus-next exec tsc --noEmit
+
+      - name: Build (media-server)
+        run: pnpm --filter videmus-media-server build
+      - name: Build (resource-server)
+        run: pnpm --filter videmus-resource-server build
+      # 環境変数も DB も要らない（API の URL は実行時に読む。ビルド時は空で通る）
+      - name: Build (next)
+        run: pnpm --filter videmus-next build

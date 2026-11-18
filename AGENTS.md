@@ -38,6 +38,8 @@ OBS から WebRTC（WHIP）で受けた配信を、少人数の視聴者にブ�
 - 環境変数は `.env.*`（gitignore 対象・コミットしない）。一覧は [prd/02](./prd/02-architecture.md) §5。
 - サーバのイメージは `./scripts/push-images.sh` で ghcr に push する（[prd/02](./prd/02-architecture.md) §3）。
   media-server の mediasoup-worker は本番のカーネル 6 向けを固定で取得する。ビルドするホストのカーネルに任せない。
+- PR と main への push で CI（`.github/workflows/ci.yml`）が走る。各パッケージの型検査（`tsc --noEmit`）と、
+  media-server / resource-server / next の本番ビルド。lint は入れていない（`next lint` が今は動かない）。
 
 ## 気をつけること
 
