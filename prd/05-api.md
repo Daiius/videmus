@@ -74,9 +74,26 @@ resource-server からだけ呼ばれる想定で、認証は持たない。**�
 | `GET /mediasoup/*` / `POST /mediasoup/*` | §1.4 と同じ 5 つ |
 | `GET /internal/viewer-count/:broadcastId` | `{ count, exists }`。配信 ID で引く |
 | `POST /internal/update-stream-id/:broadcastId` | body `{ newStreamId }`。視聴用 ID を書き換える。配信中でなければ 404 `{ updated: false }` |
+| `GET /version` | ビルドの版（§4） |
 
 ## 3. エラーの形
 
 両サーバとも結果を `{ success, data } | { success: false, error: { type, message } }` で受け渡し、
 `type` で HTTP ステータスに変える。`ResourceNotFound` は 404、`NotAvailable` は 403、`Unexpected` は 500。
 エラーの本文は平文の `message`。
+
+## 4. ビルドの版
+
+動いているサーバがどのコミットから作られたかを、外から確かめるための口。両サーバが同じ形で持つ。
+
+| メソッド・パス | 認証 | 内容 |
+|---|---|---|
+| `GET /version` | なし | `{ commit, builtAt, dirty }` |
+
+- `commit` は 40 桁の SHA、`builtAt` は ISO 8601 の UTC、`dirty` は未コミットの変更を含むビルドかどうか。
+  分からない値は `"unknown"`（`dirty` は `false`）。開発環境は何も渡さないので `unknown` になる。
+- 値はイメージのビルド引数（`GIT_COMMIT` / `BUILD_TIME` / `GIT_DIRTY`）を最終ステージの ENV に入れたもの
+  （[02](./02-architecture.md) §3）。起動時に 1 度読むだけで、DB にも media-server にも触れない。
+- resource-server の版は、ほかの API と同じ経路で外から読める。media-server は外に HTTP の口を持たないので
+  （[06](./06-auth-and-trust.md) §2）、コンテナの中か resource-server と同じネットワークから読む。
+  resource-server は media-server の版を中継しない。
