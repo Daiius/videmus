@@ -1,11 +1,62 @@
 name: Build and push images
 
-# resource-server / media-server の本番イメージを作り、GHCR に push する（prd/02 §3）。
-# 手で起動する（Actions の画面で ref を選ぶ）。
-# タグはコミットの SHA（40 桁・接頭辞なし。scripts/push-images.sh と同じ形）。main から作ったときだけ latest も付ける。
+# resource-server / media-server の本番イメージを作り、GHCR に push する（prd/02 §3・§3.1）。
+# main への push（下の paths に当たるとき）と、手で起動したとき（Actions の画面で ref を選ぶ）に走る。
+# タグはコミットの SHA（40 桁・接頭辞なし。scripts/push-images.sh と同じ形）。
+# latest は、この回のあとの job「promote」が、イメージごとに main に突き合わせて動かす（latest を動かすのはこの job だけ）。
+# ⚠ 本番の VPS の側で latest の追従を有効にすると、VPS が latest を数分おきに見て、変わっていれば自動で入れ替える。
+#   そのあとは **main に入った resource-server / media-server の変更は、このビルドを経て数分で本番に出る**
+#   （AGENTS.md「main に入ると本番に出る」・prd/02 §3.1）。media-server を入れ替えると、配信・視聴が切れる。
+# next は Vercel の側でビルドされるので対象外。
 # 第三者の action は使わず、ランナーの docker で作る。
 
 on:
+  push:
+    branches: [main]
+    # paths はイメージごとに分ける（片方だけに効く変更で、もう片方を作り直さず、入れ替えもしない。
+    # とくに media-server は入れ替えると配信中のリソースが消える。prd/04 §2）。起動の条件は 2 つの一覧の和。
+    # 各 Dockerfile が読むものだけ（漏れると効く変更がビルドされず、広すぎると関係ない変更で本番が再起動する）:
+    #   - 根の package.json / pnpm-lock.yaml / pnpm-workspace.yaml: 先頭の COPY（両方）
+    #   - <service>/package.json: 依存の定義の COPY
+    #   - <service>/src/・tsconfig.json・esbuild.config.ts: ソースとバンドルの設定の COPY（esbuild は tsconfig.json も読む）
+    #   - resource-server だけ: database/package.json と database/db/（バンドルに入る DB 操作とスキーマ）
+    #   - <service>/Dockerfile.<service>.prod 自身と、この workflow 自身（ビルドの手順・タグ・ビルド引数）
+    #   - 根の .dockerignore: ビルドの文脈に入るファイルを決める（ディレクトリごとの COPY の結果が変わりうる）（両方）
+    # 入れていないもの: next/・database のほかのファイル（addTestData.ts・tsconfig.json。イメージに入らない）・
+    #   scripts/・Dockerfile.dev・docker-compose*.yml・文書。src/ の中のテスト（*.test.ts）は分けられないので、
+    #   テストだけの変更でも作り直す。根の pnpm-lock.yaml は next の依存だけを変えても変わるので、そのときも両方を作り直す。
+    #   両方に共通の行（根のファイル・.dockerignore・この workflow）は、どちらの一覧にも書く。
+    # ⚠ 下の印の間は、ビルドの job（この push で作るかの判定。この回のコミットのこのファイル）と、
+    #   latest を動かす job「promote」（main の先頭のこのファイル）も読む（一覧はここ 1 か所だけ）。
+    #   印の名前は「<matrix.service>-paths」。形は「- <パス>」を 1 行ずつ。
+    #   印を消したり、ほかの形の行を挟むと、その job「promote」は latest を動かさずに失敗で止まる。
+    paths:
+      # >>> media-server-paths
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - media-server/package.json
+      - media-server/tsconfig.json
+      - media-server/esbuild.config.ts
+      - media-server/src/**
+      - media-server/Dockerfile.media-server.prod
+      - .dockerignore
+      - .github/workflows/build-push-images.yml
+      # <<< media-server-paths
+      # >>> resource-server-paths
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - resource-server/package.json
+      - resource-server/tsconfig.json
+      - resource-server/esbuild.config.ts
+      - resource-server/src/**
+      - resource-server/Dockerfile.resource-server.prod
+      - database/package.json
+      - database/db/**
+      - .dockerignore
+      - .github/workflows/build-push-images.yml
+      # <<< resource-server-paths
   workflow_dispatch:
 
 permissions:
@@ -21,16 +72,67 @@ jobs:
       fail-fast: false
       matrix:
         service: [resource-server, media-server]
+    # 同じコミット・同じイメージの回（push と手動起動の重複・再実行）だけを直列にする（group にイメージ名を入れないと、
+    # 同じ回の 2 つのイメージが互いを待つ）。ほかのコミットのビルドは並んで走ってよい（latest を動かすのは下の job「promote」で、
+    # そちらはコミットに依らない突き合わせを、イメージごとの固定の group で直列に行う）。
+    # 走っている回は打ち切らない: push の途中で止めると、半端な状態が残りうる。
+    concurrency:
+      group: build-push-images-${{ matrix.service }}-${{ github.sha }}
+      cancel-in-progress: false
     env:
       IMAGE: ghcr.io/daiius/videmus-${{ matrix.service }}
       SERVICE: ${{ matrix.service }}
       SHA: ${{ github.sha }}
     steps:
-      # v7.0.1
+      # v7.0.1。この push で作るかの判定に、push の前の main からの履歴を見るので、浅い取得にしない。
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      # main への push の回は、この push で入ったコミット（push の前の main から、この回のコミットまでの first-parent）の
+      # どれかが、このイメージの paths（この回のコミットの workflow の印の間）に当たるときだけ作る。
+      # もう片方のイメージだけに効く push で、このイメージを作らない（作ると、T のビルドが失敗している間や、
+      # T のビルドより先に終わったときに、job「promote」がそれに latest を向け、入力の同じ版で入れ替えが起きる）。
+      # 手で起動した回・push の前のコミットを読めない回・印を読めない回は、作る（作りすぎても、promote は T のイメージを先に見る）。
+      - name: Decide whether to build
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          WORKFLOW_FILE: .github/workflows/build-push-images.yml
+          MARK: ${{ matrix.service }}-paths
+        run: |
+          set -u
+          note() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          build() { note "$SERVICE: 作る（$1）"; echo build=true >> "$GITHUB_OUTPUT"; exit 0; }
+          skip() { note "$SERVICE: 作らない（$1）"; echo build=false >> "$GITHUB_OUTPUT"; exit 0; }
+
+          [ "$EVENT" = push ] || build "$EVENT で起動した"
+          case "$BEFORE" in
+            ''|0000000000000000000000000000000000000000) build "push の前のコミットが無い" ;;
+          esac
+          git cat-file -e "$BEFORE^{commit}" 2>/dev/null || build "push の前のコミット $BEFORE を読めない"
+          if [ "$(grep -c "^ *# >>> $MARK\$" "$WORKFLOW_FILE")" != 1 ] ||
+             [ "$(grep -c "^ *# <<< $MARK\$" "$WORKFLOW_FILE")" != 1 ]; then
+            build "paths の一覧の印（$MARK）が見つからない"
+          fi
+          specs=()
+          while IFS= read -r line; do
+            t="${line#"${line%%[![:space:]]*}"}"
+            case "$t" in
+              ''|'#'*) ;;
+              '- '*) specs+=(":(glob)${t#- }") ;;
+              *) build "paths の一覧に読めない行がある: $t" ;;
+            esac
+          done < <(sed -n "/^ *# >>> $MARK\$/,/^ *# <<< $MARK\$/p" "$WORKFLOW_FILE")
+          [ "${#specs[@]}" -gt 0 ] || build "paths の一覧が空"
+          if ! hits=$(git log --first-parent --format=%H "$BEFORE..$SHA" -- "${specs[@]}"); then
+            build "履歴を読めない"
+          fi
+          [ -z "$hits" ] || build "この push のコミットが $SERVICE の paths に当たる"
+          skip "この push（$BEFORE..$SHA）は $SERVICE の paths に当たらない"
       - name: Login to GHCR
+        if: steps.decide.outputs.build == 'true'
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
@@ -39,6 +141,7 @@ jobs:
       # checkout したままのツリーから作るので dirty は常に false。
       # Dockerfile が ARG を持たない版でも、渡した引数は使われないだけでビルドは通る
       - name: Build
+        if: steps.decide.outputs.build == 'true'
         run: |
           docker build --pull \
             -f "$SERVICE/Dockerfile.$SERVICE.prod" \
@@ -48,13 +151,147 @@ jobs:
             --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
             --label org.opencontainers.image.revision="$SHA" \
             -t "$IMAGE:$SHA" .
+      # ここで push するのは SHA のタグだけ。latest は、この回のあとの job「promote」が、main に突き合わせて動かす。
       - name: Push
-        env:
-          REF: ${{ github.ref }}
+        if: steps.decide.outputs.build == 'true'
         run: |
           docker push "$IMAGE:$SHA"
-          if [ "$REF" = "refs/heads/main" ]; then
-            docker tag "$IMAGE:$SHA" "$IMAGE:latest"
-            docker push "$IMAGE:latest"
-          fi
           echo "pushed $IMAGE:$SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  # `latest`（本番が追いかけるタグ）を、イメージごとに動かす job。ビルドと SHA のタグの push が済んだ回のあとに走る。
+  # この job は「この回のコミット」ではなく、その時点の main から latest が指すべき版を求めて、突き合わせる:
+  #   1. main を取り直し、main の先頭の workflow の印（<service>-paths）の間から、そのイメージの paths の一覧を読む
+  #   2. main の first-parent の履歴で paths に当たる最後のコミット T を求める（merge commit なら、それ自身が T）
+  #   3. T の SHA のタグのイメージがあれば、それに latest を向ける。T から main の先頭までのコミットは
+  #      ビルドの入力が T と同じなので、T のイメージが無く、それらのイメージがあれば（効く変更と文書を 1 回で
+  #      push したときは、先頭のコミットでしかビルドされない）、そのうちイメージのあるものに向ける（打ち切らずに全部を調べる）
+  #   4. どれのイメージも無ければ（T のビルドがまだ終わっていない・失敗した）何もしない。T の回が終われば、その回が付ける。
+  #      T のビルドが失敗していれば、T の回を再実行すれば付く（Summary に出る）
+  #   どの回のこの job も同じ突き合わせをするので、古い回の再実行でも latest は戻らず、待っていた回が
+  #   取り消されても害が無い（生き残った回が、より新しい main で同じ突き合わせをする）。
+  #   片方のイメージだけに効く変更では、もう片方の T は変わらないので、もう片方の latest は動かない。
+  # イメージごとの固定の group で直列にする（判定と付与の間に、別の回の付与が割り込まない）。走っている回は打ち切らない。
+  # ビルドの job が片方のイメージで失敗しても走らせる（もう片方の latest を、その回で動かせるように。
+  # 失敗した方は T のイメージが無いので動かない）。回が取り消されたときは走らせない。
+  # main 以外の枝の回では走らせない（突き合わせるだけなので害は無いが、枝の回が latest に触れないと分かる方がよい）。
+  # 突き合わせられないとき（main を取れない・履歴が浅い・paths の一覧を読めない・レジストリを確かめられない）は、
+  # latest を動かさずに失敗で終える。結果と理由は実行の Summary に出す。
+  promote:
+    needs: build-push
+    if: ${{ !cancelled() && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [resource-server, media-server]
+    concurrency:
+      group: build-push-images-promote-${{ matrix.service }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # v7.0.1。main の履歴（paths に当たる最後のコミット）を求めるので、浅い取得にしない。
+      # 資格情報は残さない（公開のリポジトリなので、git fetch は資格情報なしで通る）。
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Login to GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      - name: Point latest at the build that main should run
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          WORKFLOW_FILE: .github/workflows/build-push-images.yml
+          IMAGE: ghcr.io/daiius/videmus-${{ matrix.service }}
+          MARK: ${{ matrix.service }}-paths
+          TAG_PREFIX: ''
+        run: |
+          # Actions の bash は -e -o pipefail で動く。失敗を判定に使うコマンドは if / || で受ける。
+          set -u
+          note() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          fail() { note "$IMAGE: latest を動かさない（失敗）: $1"; exit 1; }
+          errf=$(mktemp)
+          # inspect <参照>: 標準出力にダイジェスト。終了コードは 0 = ある・1 = 無い・2 = 確かめられない（レジストリの不調など）。
+          # 「無い」は、エラーの文に not found / manifest unknown があるときだけとみなす。それ以外は「確かめられない」。
+          # 取り違えても安全側: 本当は無いのに「確かめられない」なら失敗で終わるだけ、本当は不調なのに「無い」なら動かさないだけ。
+          inspect() {
+            local out rc=0
+            out=$(docker buildx imagetools inspect --format '{{.Manifest.Digest}}' "$1" 2>"$errf") || rc=$?
+            if [ "$rc" -eq 0 ] && [ -n "$out" ]; then printf '%s' "$out"; return 0; fi
+            if grep -qiE 'not found|manifest unknown' "$errf"; then return 1; fi
+            cat "$errf" >&2
+            return 2
+          }
+
+          if ! git fetch --quiet --no-tags origin "refs/heads/$DEFAULT_BRANCH"; then
+            fail "リモートの $DEFAULT_BRANCH を取得できない"
+          fi
+          if [ "$(git rev-parse --is-shallow-repository)" != false ]; then
+            fail "履歴が浅く、paths に当たる最後のコミットを求められない"
+          fi
+          if ! head=$(git rev-parse --verify --quiet 'FETCH_HEAD^{commit}'); then
+            fail "リモートの $DEFAULT_BRANCH の先頭を読めない"
+          fi
+          # paths の一覧を、main の先頭の workflow の、このイメージの印の間から読む。
+          if ! wf=$(git show "$head:$WORKFLOW_FILE"); then
+            fail "main の先頭に $WORKFLOW_FILE が無い"
+          fi
+          if [ "$(grep -c "^ *# >>> $MARK\$" <<<"$wf")" != 1 ] ||
+             [ "$(grep -c "^ *# <<< $MARK\$" <<<"$wf")" != 1 ]; then
+            fail "main の先頭の paths の一覧の印（$MARK）が見つからない"
+          fi
+          specs=()
+          while IFS= read -r line; do
+            t="${line#"${line%%[![:space:]]*}"}"
+            case "$t" in
+              ''|'#'*) ;;
+              '- '*) specs+=(":(glob)${t#- }") ;;
+              *) fail "paths の一覧に読めない行がある: $t" ;;
+            esac
+          done < <(sed -n "/^ *# >>> $MARK\$/,/^ *# <<< $MARK\$/p" <<<"$wf")
+          if [ "${#specs[@]}" -eq 0 ]; then
+            fail "paths の一覧が空"
+          fi
+          # first-parent の履歴で見る（merge commit を、マージした枝のコミットに置き換えない）。
+          if ! T=$(git log -1 --first-parent --format=%H "$head" -- "${specs[@]}") || [ -z "$T" ]; then
+            fail "main で paths に当たる最後のコミットを求められない"
+          fi
+          # 候補: T から先頭までの first-parent のコミット全部（入力は T と同じ）。打ち切らない（打ち切ると、
+          # イメージのあるコミットが範囲の外に出たとき、成功したビルドが配信されない）。
+          # 調べる順は回に依らない: T → 残りを新しい方から（どの回が走っても、同じ main と同じレジストリなら同じ答えになる。
+          # この回のコミットを先にすると、古い回の再実行が、より新しい同じ中身のイメージから latest を戻してしまう）。
+          mapfile -t newer < <(git rev-list --first-parent "$T..$head")
+          cands=("$T" "${newer[@]}")
+
+          src='' src_digest=''
+          for x in "${cands[@]}"; do
+            rc=0
+            d=$(inspect "$IMAGE:$TAG_PREFIX$x") || rc=$?
+            case $rc in
+              0) src=$x src_digest=$d; break ;;
+              1) ;;
+              *) fail "レジストリで $IMAGE:$TAG_PREFIX$x を確かめられない" ;;
+            esac
+          done
+          if [ -z "$src" ]; then
+            note "$IMAGE: latest を動かさない: 指すべき版 T（$T）のイメージがまだ無い（ビルド中か、失敗した）。T の回が終われば付く。失敗していれば T の回を再実行する"
+            exit 0
+          fi
+          rc=0
+          cur=$(inspect "$IMAGE:latest") || rc=$?
+          case $rc in
+            0|1) ;;
+            *) fail "レジストリで $IMAGE:latest を確かめられない" ;;
+          esac
+          if [ "$rc" -eq 0 ] && [ "$cur" = "$src_digest" ]; then
+            note "$IMAGE: latest はもう指すべき版を指している: $src（T=$T）"
+            exit 0
+          fi
+          docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$TAG_PREFIX$src"
+          note "$IMAGE: latest を動かした: $src（T=$T・main の先頭 $head）"

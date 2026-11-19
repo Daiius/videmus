@@ -1,5 +1,8 @@
 #!/bin/bash
-# resource-server / media-server の本番イメージをビルドして ghcr に push する。
+# resource-server / media-server のイメージをビルドして ghcr に push する（Actions が使えないとき・枝のイメージを作るとき）。
+# 付けるタグはコミットの SHA（40 桁）だけ。
+# ⚠ latest は付けない。latest は本番が追いかけるタグで、追従が有効なら push した瞬間に本番に出る。
+#   latest を動かすのは workflow（.github/workflows/build-push-images.yml の job「promote」）だけ（AGENTS.md・prd/02 §3.1）。
 # 事前に ghcr.io へ docker login しておく（write:packages）。
 #
 #   ./scripts/push-images.sh                 # 両方
@@ -25,7 +28,7 @@ for s in "${services[@]}"; do
   image=ghcr.io/daiius/videmus-$s
   echo "### $image ($sha)"
   docker build --pull --push \
-    -t "$image:latest" -t "$image:$sha" \
+    -t "$image:$sha" \
     --build-arg GIT_COMMIT="$sha" \
     --build-arg BUILD_TIME="$built_at" \
     --build-arg GIT_DIRTY=false \
