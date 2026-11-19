@@ -293,5 +293,6 @@ jobs:
             note "$IMAGE: latest はもう指すべき版を指している: $src（T=$T）"
             exit 0
           fi
-          docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$TAG_PREFIX$src"
+          # --prefer-index=false: 元が単一の manifest でも index に包まず、SHA のタグと同じダイジェストのまま付ける（包むと、上の「同じなら何もしない」が成り立たなくなる）
+          docker buildx imagetools create --prefer-index=false -t "$IMAGE:latest" "$IMAGE:$TAG_PREFIX$src"
           note "$IMAGE: latest を動かした: $src（T=$T・main の先頭 $head）"
