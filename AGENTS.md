@@ -5,8 +5,8 @@ OBS から WebRTC（WHIP）で受けた配信を、少人数の視聴者にブ�
 
 ## ⚠ main に入ると resource-server / media-server は数分で本番に出る（マージの前に必ず読む）
 
-> **状態: workflow は実装済み・本番の追従は未有効（2026-11-19 時点）。** 有効にするのは所有者（本番の VPS の側の設定）。
-> 有効になるまでは、main に入ってもイメージが作られ `latest` が動くだけで、本番は入れ替わらない。以下は、有効になったあとの決まり。
+> **状態: workflow は実装済み・本番の追従は有効（2026-11-19 に有効化）。** 本番の VPS の側の設定は所有者が行った。
+> 有効化の直後に、本番が main のイメージへ入れ替わったことを確かめてある。以下は、その決まり。
 
 - **resource-server と media-server は、main にマージされると数分で本番に出る。** main への push でイメージが作られ
   （[`build-push-images.yml`](./.github/workflows/build-push-images.yml)。イメージごとの `paths` に当たる変更のとき。
@@ -23,7 +23,7 @@ OBS から WebRTC（WHIP）で受けた配信を、少人数の視聴者にブ�
   マージすると新しい resource-server が先に出るため、順序が逆だと新しい resource-server が古いスキーマの上で動く。
   切り戻したときも、戻した resource-server が新しいスキーマの上で動けるようにしておく。
   マージの前にイメージが要るときの手段の 1 つ: PR の枝で workflow を手で起動すれば、`latest` を動かさずに `:<コミットの SHA>` のイメージができる。
-- 🔒 **手元から `latest` を push しない**（追従が有効なら、push した瞬間に本番に出る）。`latest` を動かすのは workflow の job「promote」だけ。
+- 🔒 **手元から `latest` を push しない**（追従は有効なので、push した瞬間に本番に出る）。`latest` を動かすのは workflow の job「promote」だけ。
   `scripts/push-images.sh` も `:<コミットの SHA>` のタグだけを付ける。
 - 本番の版は `GET /version` の `commit` で確かめる（[prd/05](./prd/05-api.md) §4）。
   **おかしいときの戻し方（VPS での切り戻し）は所有者の作業。エージェントは VPS に触らない。**

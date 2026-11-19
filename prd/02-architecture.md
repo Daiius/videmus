@@ -47,7 +47,7 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
   `ghcr.io/daiius/videmus-{resource-server,media-server}` に `:<commit sha>` で push する。
   `:latest`（本番が追いかけるタグ）は、同じ workflow の job「promote」だけが動かす（§3.1）。
   手元からは `scripts/push-images.sh` で作れる（Actions が使えないとき・枝のイメージを作るとき）。
-  付けるのは `:<commit sha>` だけで、**`:latest` は手元から push しない**（追従が有効なら、push した版がそのまま本番に出る）。
+  付けるのは `:<commit sha>` だけで、**`:latest` は手元から push しない**（追従は有効なので、push した版がそのまま本番に出る）。
   - ビルドのときに版（コミットの SHA・ビルド日時・dirty か）をビルド引数で渡す。イメージはそれを ENV に持ち、
     `GET /version` で返す（[05](./05-api.md) §4）。
   - **本番の compose はこのリポジトリの外で管理している。** リポジトリの `docker-compose.prod.yml` は
@@ -65,8 +65,8 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
 
 ### 3.1 resource-server / media-server は main に入ると本番に出る（タグの追従）
 
-**状態: workflow は実装済み・本番の追従は未有効（2026-11-19 時点）。** 有効にするのは所有者（本番の VPS の側の設定）。
-有効になるまでは、main に入ってもイメージが作られ `:latest` が動くだけで、本番は入れ替わらない。以下は、有効になったあとの姿。
+**状態: workflow は実装済み・本番の追従は有効（2026-11-19 に有効化）。** 本番の VPS の側の設定は所有者が行った。
+有効化の直後に、本番が main のイメージへ入れ替わったことを確かめてある（resource-server は `/version` の `commit` が main のコミット）。
 
 **main にマージされた resource-server / media-server の変更は、数分で本番に出る。**
 
