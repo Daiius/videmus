@@ -42,9 +42,12 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
 
 - **next**: Vercel にデプロイする（root ディレクトリは `next/`）。
   `next/Dockerfile.nextjs.prod` も残っているが本番では使っていない（[07](./07-roadmap.md) §2 の片付け）。
-- **resource-server / media-server**: VPS 上の docker compose で動かす。イメージはこのリポジトリの
-  `scripts/push-images.sh` でビルドし、`ghcr.io/daiius/videmus-{resource-server,media-server}` に push する
-  （`:latest` と `:<commit sha>`）。
+- **resource-server / media-server**: VPS 上の docker compose で動かす。イメージは GitHub Actions
+  （`.github/workflows/build-push-images.yml`。main への push と手動起動）でビルドし、
+  `ghcr.io/daiius/videmus-{resource-server,media-server}` に `:<commit sha>` で push する。
+  `:latest`（本番が追いかけるタグ）は、同じ workflow の job「promote」だけが動かす（§3.1）。
+  手元からは `scripts/push-images.sh` で作れる（Actions が使えないとき・枝のイメージを作るとき）。
+  付けるのは `:<commit sha>` だけで、**`:latest` は手元から push しない**（追従が有効なら、push した版がそのまま本番に出る）。
   - ビルドのときに版（コミットの SHA・ビルド日時・dirty か）をビルド引数で渡す。イメージはそれを ENV に持ち、
     `GET /version` で返す（[05](./05-api.md) §4）。
   - **本番の compose はこのリポジトリの外で管理している。** リポジトリの `docker-compose.prod.yml` は
@@ -55,12 +58,56 @@ DB と認証の関心事を resource-server に、メディアの関心事を me
     mediasoup の postinstall はビルドするホストのカーネルで選ぶため、それに任せるとカーネル 7 のホストでは
     kernel7 版が入り、本番とずれる（`media-server/Dockerfile.media-server.prod`）。
   - 本番イメージは distroless（`gcr.io/distroless/nodejs24-debian13:debug`）上で、esbuild でバンドルした `server.js` を動かす。
-  - 同じイメージは GitHub Actions（`.github/workflows/build-push-images.yml`。手動起動）でも作れる。
-    タグは `:<commit sha>` で、main から作ったときだけ `:latest` も付ける。
 - **DB**: MySQL。本番のホスト・ポートの公開方法・TLS などの具体は公開リポジトリに書かない。
 - **WebRTC のポート**: media-server は UDP/TCP の 1 ポート（既定 44400、`WEBRTC_PORT`）で全配信・全視聴者を受ける
   （mediasoup の `WebRtcServer`）。`ANNOUNCED_IP` に外から届く IP を設定する。
 - **要確認**: 本番 DB へのスキーマの適用手順。dev は `drizzle-kit push` で、マイグレーションファイルは持っていない。
+
+### 3.1 resource-server / media-server は main に入ると本番に出る（タグの追従）
+
+**状態: workflow は実装済み・本番の追従は未有効（2026-11-19 時点）。** 有効にするのは所有者（本番の VPS の側の設定）。
+有効になるまでは、main に入ってもイメージが作られ `:latest` が動くだけで、本番は入れ替わらない。以下は、有効になったあとの姿。
+
+**main にマージされた resource-server / media-server の変更は、数分で本番に出る。**
+
+- 流れ: main への push → `build-push-images.yml` がイメージを作って `:<コミットの SHA>` で push し、そのあとの job が
+  イメージごとに main に突き合わせて `:latest` を動かす → 本番の VPS がレジストリの `:latest` を数分おきに見て、
+  変わっていれば入れ替える → VPS の側で疎通と版（`/version` の `commit` がイメージの `GIT_COMMIT` と一致するか）を確かめ、
+  駄目なら前のイメージに自動で戻す。動いているが挙動がおかしいときは、所有者が VPS で手で戻す（エージェントは VPS に触らない）。
+  デプロイの仕組みの設計は、所有者の非公開のリポジトリにある。
+- ⚠ **media-server を入れ替えると、配信・視聴が切れる**（配信のリソースはメモリにだけある。[04](./04-media.md) §2）。
+  そのため videmus の PR は、マイグレーションなどの有無に関わらず、マージの可否とタイミングを所有者が判断する。エージェントは勝手にマージしない。
+- **`paths` はイメージごとに分けてある**（workflow の起動条件の印 `media-server-paths`・`resource-server-paths` の間。
+  起動の条件は 2 つの和）。片方だけに効く変更では、もう片方は作り直さず、`:latest` も動かない（入れ替わらない）。
+  - media-server: 根の `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml`・`media-server` の `src/**`・`package.json`・
+    `tsconfig.json`・`esbuild.config.ts`・`Dockerfile.media-server.prod`・根の `.dockerignore`・workflow 自身
+  - resource-server: 根の 3 つ・`resource-server` の `src/**`・`package.json`・`tsconfig.json`・`esbuild.config.ts`・
+    `Dockerfile.resource-server.prod`・`database/package.json`・`database/db/**`（バンドルに入る DB 操作とスキーマ）・根の `.dockerignore`・workflow 自身
+  - 根の 3 つ・`.dockerignore`・workflow 自身は両方に効く（たとえば next の依存だけを上げても `pnpm-lock.yaml` が変わるので、両方が入れ替わる）。
+    next・文書・`scripts/`・`Dockerfile.dev`・compose の変更では、本番は入れ替わらない。`src/` の中のテストだけの変更では作り直す（分けられない）
+- ビルドの job は、main への push の回は**その push で入ったコミットがそのイメージの `paths` に当たるときだけ**作る
+  （push の前の main からの first-parent の履歴で見る）。もう片方だけに効く push で作ると、そのイメージの T のビルドが
+  失敗している間や、T のビルドより先に終わったときに、下の job がそれに `:latest` を向け、入力の同じ版で入れ替えが起きるため。
+  手で起動した回・push の前のコミットを読めない回は、両方作る。
+- `:latest` は、ビルドの job とは別の job「promote」がイメージごとに動かす。この job は**その回のコミットに依らず、その時点の main に突き合わせる**:
+  - main を取り直し、main の先頭の workflow からそのイメージの `paths` の一覧を読み、main の first-parent の履歴で `paths` に当たる
+    最後のコミット T を求める（merge commit なら、それ自身が T）。`:latest` のイメージの `GIT_COMMIT` は、ふつう T（ビルドの入力が変わった最後のコミット）になる
+  - T の SHA のタグのイメージがあれば、`:latest` をそれに向ける（push 済みのイメージにあとから付ける。作り直さない。既に同じなら何もしない）。
+    効く変更と文書を 1 回で push したときは先頭のコミットでしかビルドされないので、T のイメージが無ければ、T から先頭までのコミット
+    （入力は T と同じ）のうちイメージのあるものに向ける（打ち切らずに全部を調べる。調べる順は回に依らず新しい方からで、どの回の job も同じ答えになる）
+  - どのイメージも無ければ（T のビルドがまだ終わっていない・失敗した）何もしない。T の回が終われば、その回の job が付ける。
+    T のビルドが失敗していれば `:latest` は前の版のままで、Summary に「T のイメージがまだ無い」と出る。T の回を再実行すれば付く
+  - 突き合わせられないとき（main を取れない・履歴が浅い・`paths` の一覧を読めない・レジストリを確かめられない）は、動かさずに失敗で終わる
+  - この job はイメージごとの固定の group で直列に走る（判定と付与の間に、別の回の付与が割り込まない）。どの回のこの job も同じ突き合わせをするので、
+    古い回の再実行でも `:latest` は戻らず、待っていた回が取り消されても、生き残った回がより新しい main で同じ突き合わせをする。
+    片方のイメージのビルドが失敗しても、もう片方の job は走る。main 以外の枝の回では、この job は走らない
+- 🔒 **順序を守るのは、マージする人とエージェント。** 仕組みの側に、スキーマの変更や配信中かどうかで止める関所は無い。
+  - DB のスキーマの変更・環境変数の追加・手作業を伴う PR は、マージの前に所有者と段取りを決める。
+  - スキーマの変更は**古い resource-server でも動く形（足すだけ）**にし、**先に本番 DB に反映してからマージする**（反映の手順は上の「要確認」。どう反映するかは所有者と決める）。
+    マージの前にイメージが要るときの手段の 1 つ: PR の枝で workflow を手で起動すれば、`:latest` を動かさずに `:<コミットの SHA>` のイメージができる。
+  - ⚠ 切り戻しで resource-server を戻しても、スキーマは戻らない。戻した resource-server が新しいスキーマで動けることが前提になる。
+- 🔒 **`:latest` を動かすのは workflow の job「promote」だけ。** 手元から `:latest` を push しない（`scripts/push-images.sh` も付けない）。
+- next（Vercel）はこの仕組みの外。
 
 ## 4. 開発環境
 

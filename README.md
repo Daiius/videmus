@@ -78,5 +78,7 @@ OBS配信設定もこのページに一緒に示されています。
 ## 配置
 
 next は Vercel に、resource-server と media-server は VPS 上の docker compose に置きます。
-サーバのイメージは `./scripts/push-images.sh` で `ghcr.io/daiius/videmus-*` にビルド・push します
-（事前に ghcr.io へ `docker login`）。詳細は [prd/02](./prd/02-architecture.md) §3 にあります。
+サーバのイメージは、main への push で GitHub Actions（`.github/workflows/build-push-images.yml`）が
+`ghcr.io/daiius/videmus-*` にビルド・push します。手元からは `./scripts/push-images.sh` でも作れます
+（事前に ghcr.io へ `docker login`。付けるのはコミットの SHA のタグだけで、`latest` は付けません）。
+詳細は [prd/02](./prd/02-architecture.md) §3・§3.1 にあります。
