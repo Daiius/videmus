@@ -19,6 +19,7 @@ const port = Number(process.env.PORT ?? 4001)
 //   そのため、合図から受け付けを止めるまで（処理中が 0 になるまで。ふつうは約 150ms、最大 7.5 秒）は、
 //   「HTTP は受け付けたまま・中継はもう閉じている」。そのあいだのリクエストは:
 //   - mediasoup の呼び出しを await するもの（WHIP・transport の作成と接続・consumer の作成と再開など）は、WorkerClosedError で
+//     （worker に実際に要求を出す場合。consumer が 0 件のときの作成・再開は要求を出さないので 200 を返す。成功の応答は、視聴の準備が整ったことを意味しない）
 //     すぐに失敗し、各ハンドラの catch で 500 を返す（await しない mediasoup の非同期の呼び出しは置かない。
 //     拒否を誰も受けないと、Node の既定ではプロセスが落ちる）
 //   - mediasoup に問い合わせず、Node の側の値や `resourcesDict` だけを読むもの（router の RTP の能力・配信の状況・視聴者数）は、
