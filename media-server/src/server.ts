@@ -18,10 +18,9 @@ const port = Number(process.env.PORT ?? 4001)
 // - mediasoup の Worker は、作られたときに自分で SIGTERM / SIGINT を購読し、合図の時点で `worker.close()` を呼ぶ。
 //   そのため、合図から受け付けを止めるまで（処理中が 0 になるまで。ふつうは約 150ms、最大 7.5 秒）は、
 //   「HTTP は受け付けたまま・中継はもう閉じている」。そのあいだのリクエストは:
-//   - mediasoup の呼び出しを await するもの（WHIP・transport の作成と接続・consumer の作成など）は、WorkerClosedError で
-//     すぐに失敗し、各ハンドラの catch で 500 を返す
-//   - await せずに呼ぶもの（consumer の再開 `resume-consumer` は `forEach(async ...)` で待たない）は、成功の応答を返したあと、
-//     裏で失敗することがある（その拒否は誰も受けないので、Node の既定では未処理の拒否としてプロセスが落ちうる）
+//   - mediasoup の呼び出しを await するもの（WHIP・transport の作成と接続・consumer の作成と再開など）は、WorkerClosedError で
+//     すぐに失敗し、各ハンドラの catch で 500 を返す（await しない mediasoup の非同期の呼び出しは置かない。
+//     拒否を誰も受けないと、Node の既定ではプロセスが落ちる）
 //   - mediasoup に問い合わせず、Node の側の値や `resourcesDict` だけを読むもの（router の RTP の能力・配信の状況・視聴者数）は、
 //     閉じた配信を「配信中」として成功を返す（`resourcesDict` は closer まで残る）
 //   下の closer は、その後始末の確認（閉じていなければ閉じる）と `resourcesDict` の片付け

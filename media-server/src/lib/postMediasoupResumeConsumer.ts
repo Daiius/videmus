@@ -48,7 +48,8 @@ export const postMediasoupResumeConsumer = async ({
       }
     }
 
-    streamerResource.consumers.forEach(async c => await c.resume());
+    // 待って、失敗なら下の catch で 500 にする（待たないと、拒否を誰も受けずにプロセスが落ちうる）
+    await Promise.all(streamerResource.consumers.map(c => c.resume()));
     return { success: true, data: { message: ''}, }
   } catch (err) {
     error(`Error at POST resume-consumer: ${err}`);
