@@ -16,8 +16,11 @@ const port = Number(process.env.PORT ?? 4001)
 // - 自分で閉じた後の子プロセスの終了では 'died' は来ない（'died' は閉じる前に子プロセスが落ちたときだけ）。
 //   このリポジトリは 'died' を購読していない
 // - mediasoup の Worker は、作られたときに自分で SIGTERM / SIGINT を購読し、合図の時点で `worker.close()` を呼ぶ。
-//   そのため実際には、worker は HTTP を待つ前に閉じ、mediasoup に触る処理中のリクエストは WorkerClosedError で
-//   すぐに失敗して返る。下の closer は、その後始末の確認（閉じていなければ閉じる）と `resourcesDict` の片付け
+//   そのため、合図から受け付けを止めるまで（処理中が 0 になるまで。ふつうは約 150ms、最大 7.5 秒）は、
+//   「HTTP は受け付けたまま・中継はもう閉じている」。そのあいだの mediasoup に触るリクエストは WorkerClosedError で
+//   すぐに失敗して返る（各ハンドラが catch して 500）。`resourcesDict` は closer まで残るので、配信の状況・視聴者数の
+//   問い合わせは、そのあいだ閉じた配信を「配信中」と答える。下の closer は、その後始末の確認（閉じていなければ閉じる）と
+//   `resourcesDict` の片付け
 const shutdown = createGracefulShutdown({
   closers: [
     {
