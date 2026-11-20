@@ -4,9 +4,12 @@
  * resource-server と media-server に同じ内容のファイルを置いている（両方が import できる共通のパッケージが無いため）。
  * 直すときは両方を同じに直す。
  *
- * 手順: 受け付けを止める → 処理中（ハンドラ・応答の書き出し）が 0 になり、{@link SETTLE_MS} のあいだ新しく始まらないのを待つ
- * （上限 {@link SHUTDOWN_TIMEOUT_MS}）→ closer を順に閉じる → ログの書き出しを待つ → `exit`。
- * closer を始めた後に届いたリクエストは、アプリに渡さず 503（`Retry-After: 1`）で断る。
+ * 手順: 受け付けたまま、処理中（ハンドラ・応答の書き出し）が 0 になり、{@link SETTLE_MS} のあいだ新しく始まらないのを待つ
+ * （上限 {@link SHUTDOWN_TIMEOUT_MS}）→ 受け付けを止める → closer を順に閉じる → ログの書き出しを待つ → `exit`。
+ * 待っているあいだに届いたリクエストはふつうに処理する（処理中に数えるので、それも待つ）。合図の時点で受け付けを止めると、
+ * 待つあいだ前段のプロキシが閉じた受け口へ繋ぎに行き、新しいリクエストが 502 になるため。
+ * 受け付けを止めた後に既存の接続から届いたリクエストは、アプリに渡さず 503（`Retry-After: 1`）で断る。
+ * 受け付けを止めてから `exit` までは、closer とログの書き出しの上限の合計だけ。
  * 残った接続（アイドルの keep-alive など）は、プロセスの終了で OS が閉じる。
  *
  * 処理中は 2 つの合計で数える: (a) ハンドラ（`track` で包んだ `fetch` の呼び出しから、返した Promise が settle するまで）と
@@ -23,8 +26,11 @@
  * 目的は「ハンドラが始まったリクエストを返し切る」ことで、合図の瞬間の受信途中まで取りこぼさないことは目指さない。
  * - 直接つないだクライアントの keep-alive・HTTP/1.1 のパイプライン: 処理中の応答は返すが、同じ接続の
  *   次のリクエストは終了のときに接続ごと閉じられることがある（冪等なものはクライアントが再送する種類の切断）
- * - ヘッダーや本文を受信している途中の接続: 落ち着きの時間の中でハンドラが始まれば待つが、遅ければ待たない。
+ * - ヘッダーや本文を受信している途中の接続: 受け付けを止める前にハンドラが始まれば待つが、遅ければ 503 か、終了で切れる。
  *   本文を読み切る前に返した応答（413 など）が終了と重なり、RST と競合することもある
+ * - 入れ替えで、古いプロセスが受け付けを止めてから新しいプロセスが待ち受けるまでの隙間に届いたリクエストは、
+ *   前段で 502 になる。この手順では無くせない（入れ替えの仕組みの側）。この手順が縮めるのは、待つあいだの分だけ
+ * - リクエストが途切れずに来続けると、上限まで待ってから受け付けを止める（終わらないリクエストがあるときと同じ）
  * - ハンドラが応答を返したあとに裏で続ける処理（await していない Promise・`waitUntil` の類）は待たない（いまの 2 つのサーバーには無い）
  * - メモリの上の状態は保存しない。resource-server は失って困る状態をメモリに持たない。
  *   media-server の配信リソース（`resourcesDict`）は終了で消え、**進行中の配信・視聴は切れる**（待たない。prd/04 §2）
@@ -42,7 +48,7 @@ import net from 'node:net'
  * + ログ 0.5 = 8.5 秒で、停止の猶予 10 秒に収める。closer を足すときは、合計が猶予に収まるかを見直す
  */
 export const SHUTDOWN_TIMEOUT_MS = 7_500
-/** 処理中が 0 になってから、合図の瞬間に届きかけていたリクエストが始まるのを待つ時間 */
+/** 処理中が 0 になってから、新しいリクエストが始まらないのを見届ける時間（その後に受け付けを止める） */
 export const SETTLE_MS = 150
 /** closer 1 つを待つ上限 */
 export const CLOSER_TIMEOUT_MS = 500
@@ -143,24 +149,26 @@ export function createGracefulShutdown(options: GracefulShutdownOptions = {}): {
       })
 
     const run = async (reason: string): Promise<number> => {
+      // 待つあいだも受け付ける（止めると、前段のプロキシが閉じた受け口へ繋ぎに行き、新しいリクエストが 502 になる）
       log(
-        `[shutdown] ${reason} を受けた。受け付けを止め、処理中のリクエストを待つ（上限 ${timeoutMs}ms）`,
+        `[shutdown] ${reason} を受けた。受け付けたまま、処理中のリクエストを待つ（上限 ${timeoutMs}ms）`,
       )
-      // 受け付けだけを止める。http の close() は中で closeIdleConnections() を呼び、`end()` の後で
-      // 送信のバッファに本文が残る応答も切る（Node 24 で確かめた）ので通さない
-      net.Server.prototype.close.call(server)
       log(
         (await drain())
           ? '[shutdown] 処理中のリクエストが終わった'
           : `[shutdown] warn: ${timeoutMs}ms を過ぎたので待つのをやめた`,
       )
-      // 閉じ始めた後に既存の接続から届いたリクエストは、アプリに渡さず 503 で断る（数えない・待たない）。
+      // ここで受け付けだけを止める。http の close() は中で closeIdleConnections() を呼び、`end()` の後で
+      // 送信のバッファに本文が残る応答も切る（Node 24 で確かめた）ので通さない
+      net.Server.prototype.close.call(server)
+      // 止めた後に既存の接続から届いたリクエストは、アプリに渡さず 503 で断る（数えない・待たない）。
       // `upgrade` には触らない（`@hono/node-server` は websocket を渡したときだけ付ける。ここでは使っていない）
       server.removeAllListeners('request')
       server.on('request', (_req, res) => {
         res.writeHead(503, { Connection: 'close', 'Retry-After': '1' })
         res.end('shutting down')
       })
+      log('[shutdown] 受け付けを止めた')
       for (const closer of closers) {
         const result = await withTimeout(Promise.resolve().then(closer.close), closerTimeoutMs)
         if (result !== 'ok') log(`[shutdown] warn: ${closer.name} を閉じられなかった: ${result}`)

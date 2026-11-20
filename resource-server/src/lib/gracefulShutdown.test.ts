@@ -130,7 +130,7 @@ describe('createGracefulShutdown', () => {
     current = undefined
   })
 
-  it('処理中のリクエストを 200 で返し終えてから closer を順に閉じ、exit(0) する', TEST, async () => {
+  it('処理中のリクエストを返し終えるまで新しい接続も受け付け、そのあと受け付けを止めて closer を順に閉じ、exit(0) する', TEST, async () => {
     const order: string[] = []
     const t = await setup({
       closers: [
@@ -143,8 +143,9 @@ describe('createGracefulShutdown', () => {
     const held = get(t.port, '/held')
     await t.started
     t.signal('SIGTERM')
-    // 停止の途中の新しい接続は拒まれる
-    assert.deepEqual(await get(t.port, '/fast'), { error: 'ECONNREFUSED' })
+    // 待っているあいだに届いた新しい接続のリクエストも処理される（合図の時点で受け付けを止めると ECONNREFUSED になり、
+    // 前段のプロキシでは 502 になる）
+    assert.deepEqual(await get(t.port, '/fast'), { status: 200, body: 'fast' })
     assert.deepEqual(order, [])
 
     t.release()
@@ -152,6 +153,8 @@ describe('createGracefulShutdown', () => {
     await t.shutdown('test')
     assert.deepEqual(order, ['a', 'b'])
     assertCalledOnceWith(t.exit, 0)
+    // 手順が終わったあとは拒まれる
+    assert.deepEqual(await get(t.port, '/fast'), { error: 'ECONNREFUSED' })
   })
 
   it('大きな応答は、読むのが遅い相手にも書き終えてから exit する', TEST, async () => {
@@ -221,21 +224,23 @@ describe('createGracefulShutdown', () => {
     )
   })
 
-  it('落ち着きの時間の中で始まったリクエストも返す', TEST, async () => {
+  it('落ち着きの時間の中で新しい接続から始まったリクエストも返す', TEST, async () => {
     const t = await setup({ settleMs: 2_000 })
-    const agent = new http.Agent({ keepAlive: true, maxSockets: 1 })
-    assert.equal((await get(t.port, '/fast', agent)).status, 200)
 
     const done = t.shutdown('test')
-    // 処理中は 0。既存の keep-alive の接続で、落ち着きの時間のうちに次のリクエストが始まる
-    const held = get(t.port, '/held', agent)
+    // 処理中は 0。落ち着きの時間のうちに、新しい接続で次のリクエストが始まる（受け付けはまだ止めていない）
+    const held = get(t.port, '/held')
     await t.started
-    assert.equal(callCount(t.exit), 0) // 処理中が 0 になった瞬間に先へ進んでいない
+    // 処理中が 0 になった瞬間に先へ進んでいない（受け付けも止めていない）
+    assert.equal(
+      t.logs.some((m) => m.includes('受け付けを止めた')),
+      false,
+    )
+    assert.equal(callCount(t.exit), 0)
     t.release()
     assert.deepEqual(await held, { status: 200, body: 'held done' })
     await done
     assertCalledOnceWith(t.exit, 0)
-    agent.destroy()
   })
 
   it('アイドルの keep-alive の接続が残っていても、上限を待たずに終わる', TEST, async () => {
@@ -264,10 +269,14 @@ describe('createGracefulShutdown', () => {
     await t.shutdown('test')
     assert.equal(callCount(closed), 1)
     assertCalledOnceWith(t.exit, 0)
+    // 時間切れのあとで受け付けを止める
+    const warn = t.logs.findIndex((m) => m.includes('warn') && m.includes('100ms'))
+    assert.ok(warn >= 0)
     assert.equal(
-      t.logs.some((m) => m.includes('warn') && m.includes('100ms')),
-      true,
+      t.logs.findIndex((m) => m.includes('受け付けを止めた')),
+      warn + 1,
     )
+    assert.deepEqual(await get(t.port, '/fast'), { error: 'ECONNREFUSED' })
   })
 
   it('closer が失敗・固まっても、残りの closer と exit は動く', TEST, async () => {
@@ -317,6 +326,8 @@ describe('createGracefulShutdown', () => {
 
     const done = t.shutdown('test')
     await closing.promise
+    // closer を始めた時点で、新しい接続は拒まれ、既存の接続のリクエストは 503 で断られる
+    assert.deepEqual(await get(t.port, '/fast'), { error: 'ECONNREFUSED' })
     assert.deepEqual(await get(t.port, '/held', agent), {
       status: 503,
       body: 'shutting down',
